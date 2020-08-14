@@ -1,0 +1,164 @@
+---
+title: "UJ Project"
+output: html_document
+---
+
+```{r}
+suppressMessages(library(readxl))
+suppressMessages(library(igraph))
+suppressMessages(library(tidyverse))
+suppressMessages(library(dplyr))
+suppressMessages(library(ggplot2))
+suppressMessages(library(ggraph))
+suppressMessages(library(maps))
+suppressMessages(library(lubridate))
+suppressMessages(library(janitor))
+suppressMessages(library(tibble))
+```
+
+# Load Data
+
+```{r}
+raw_data = read_xlsx("Langer-Eason Database Clean.xlsx", sheet = 1)
+raw_data$`prosecuting state`[32] = "Germany"
+```
+
+# Sort By Prosecuting/Defendant Nationality State
+
+```{r}
+states = raw_data[,c(4:5,14,19,26)]
+
+# Recode States
+states[states$`def nationality state` == "Nazi","def nationality state"] = "Germany"
+states[states$`def nationality state` == "Congo_Brazzaville","def nationality state"] = "Congo"
+states[states$`def nationality state` == "Congo_DRC","def nationality state"] = "Congo"
+states[states$`def nationality state` == "ISIS/Daesh","def nationality state"] = "Iraq" # Or Syria?
+states[states$`def nationality state` == "The_Netherlands","def nationality state"] = "Netherlands"
+states[states$`def nationality state` == "Former Yugoslavia","def nationality state"] = "Serbia" # Or Montenegro?
+states[states$`def nationality state` == "Former_Yugoslavia","def nationality state"] = "Serbia" # Or Montenegro?
+states$`def nationality state` = factor(states$`def nationality state`)
+states_def = data.frame(summary(states$`def nationality state`))
+
+states[states$`prosecuting state` == "New_Zealand","prosecuting state"] = "New Zealand"
+states[states$`prosecuting state` == "The_Netherlands","prosecuting state"] = "Netherlands"
+states$`prosecuting state` = factor(states$`prosecuting state`)
+states_pros = data.frame(summary(states$`prosecuting state`))
+
+
+
+states_edges = summarise(group_by(states, `def nationality state`, `prosecuting state`), count = n())
+states_nodes = unique(c(levels(states$`def nationality state`), levels(states$`prosecuting state`)))
+```
+
+# World Map Plot Data Preprocessing
+
+```{r}
+world_map = map_data("world")
+states_pros = data.frame(region = row.names(states_pros), states_pros)
+states_pros[,"region"] = as.character(states_pros[,"region"])
+states_pros["United States", "region"] = "USA"
+
+states_def = data.frame(region = row.names(states_def), states_def)
+states_def[,"region"] = as.character(states_def[,"region"])
+states_def["United States", "region"] = "USA"
+```
+
+# World Map Plot Data by Prosecuting
+
+```{r}
+pros.map <- full_join(states_pros, world_map, by = "region")
+colnames(pros.map)[2] = "Number.of.Prosecuting.Cases"
+pros.map$Number.of.Prosecuting.Cases[is.na(pros.map$Number.of.Prosecuting.Cases)] = 0
+ggplot(pros.map, aes(long, lat, group = group))+
+  geom_polygon(aes(fill = Number.of.Prosecuting.Cases), color = "white") +
+  scale_fill_gradient(low = "white", high = "black") +
+  labs(fill='Number of Prosecuting Cases') 
+```
+
+# World Map Plot Data by Defending
+
+```{r}
+def.map <- full_join(states_def, world_map, by = "region")
+colnames(def.map)[2] = "Number.of.Defendant.Cases"
+def.map$Number.of.Defendant.Cases[is.na(def.map$Number.of.Defendant.Cases)] = 0
+ggplot(def.map, aes(long, lat, group = group))+
+  geom_polygon(aes(fill = Number.of.Defendant.Cases), color = "white") +
+  scale_fill_gradient(low = "white", high = "black") +
+  labs(fill='Number of Defendant Cases') 
+```
+
+# Cases by Year with LOESS smoother
+
+```{r}
+case_by_year = data.frame(summarise(group_by(states, `Case Year`), count = n()))
+lw3 = loess(count ~. , data = case_by_year, span = 0.3)
+lw5 = loess(count ~. , data = case_by_year, span = 0.5)
+lw7 = loess(count ~. , data = case_by_year, span = 0.7)
+
+smoothed3 = predict(lw3) 
+smoothed5 = predict(lw5) 
+smoothed7 = predict(lw7) 
+plot(case_by_year$count, x=case_by_year$Case.Year, type="l", main="Loess Smoothing and Prediction", xlab="Year", ylab="Counts")
+lines(smoothed3, x=case_by_year$Case.Year, col="red")
+lines(smoothed5, x=case_by_year$Case.Year, col="blue")
+lines(smoothed7, x=case_by_year$Case.Year, col="green")
+legend("topleft", legend=c("LOESS 0.3 Span", "LOESS 0.5 Span", "LOESS 0.7 Span"),
+       col=c("red", "blue","green"), lty=1)
+```
+
+# Trials by Year with LOESS smoother
+
+## Clean Trial Date Data
+```{r}
+states = data.frame(states)
+states$Initial_Trial_Start_Date = factor(states$Initial_Trial_Start_Date)
+#summary(states$Initial_Trial_Start_Date)
+
+states_data_clean1 = filter(states, states$Initial_Trial_Start_Date == "1989 (approx)")
+states_data_clean2 = filter(states, states$Initial_Trial_Start_Date == "1990 (approx)")
+states_data_clean3 = filter(states, states$Initial_Trial_Start_Date == "1994 (approx)")
+states_data_clean4 = filter(states, states$Initial_Trial_Start_Date == "2005")
+states_data_clean5 = filter(states, states$Initial_Trial_Start_Date == "NA")
+states_data_clean6 = filter(states, is.na(states$Initial_Trial_Start_Date))
+states_data_clean7 = filter(states, !(states$Initial_Trial_Start_Date == "1989 (approx)"|
+                                       states$Initial_Trial_Start_Date == "1990 (approx)" |
+                                        states$Initial_Trial_Start_Date == "1994 (approx)" |
+                                        states$Initial_Trial_Start_Date == "2005" |
+                                        states$Initial_Trial_Start_Date == "NA" |
+                                        is.na(states$Initial_Trial_Start_Date)))
+
+states_data_clean1$TrialYear = 1989
+states_data_clean2$TrialYear = 1990
+states_data_clean3$TrialYear = 1994
+states_data_clean4$TrialYear = 2005
+states_data_clean5$TrialYear = NA
+states_data_clean6$TrialYear = NA
+
+states_data_clean7$Initial_Trial_Start_Date = excel_numeric_to_date(as.numeric(as.character(states_data_clean7$Initial_Trial_Start_Date)), date_system = "modern")    
+states_data_clean7$TrialYear = as.numeric(substring(states_data_clean7$Initial_Trial_Start_Date,1,4))
+
+states_data_clean7$Initial_Trial_Start_Date = as.character(states_data_clean7$Initial_Trial_Start_Date)
+
+states_data = bind_rows(states_data_clean1,states_data_clean2,states_data_clean3,states_data_clean4,states_data_clean5,states_data_clean6,states_data_clean7)
+```
+
+## LOESS Plot
+
+```{r}
+trial_by_year = data.frame(summarise(group_by(states_data, `TrialYear`), count = n()))
+trial_by_year = trial_by_year[!(is.na(trial_by_year$TrialYear)),]
+lw3a = loess(count ~. , data = trial_by_year, span = 0.3)
+lw5a = loess(count ~. , data = trial_by_year, span = 0.5)
+lw7a = loess(count ~. , data = trial_by_year, span = 0.7)
+
+smoothed3a = predict(lw3a) 
+smoothed5a = predict(lw5a) 
+smoothed7a = predict(lw7a) 
+plot(trial_by_year$count, x=trial_by_year$TrialYear, type="l", main="Loess Smoothing and Prediction", xlab="Year", ylab="Counts")
+lines(smoothed3a, x=trial_by_year$TrialYear, col="red")
+lines(smoothed5a, x=trial_by_year$TrialYear, col="blue")
+lines(smoothed7a, x=trial_by_year$TrialYear, col="green")
+legend("topleft", legend=c("LOESS 0.3 Span", "LOESS 0.5 Span", "LOESS 0.7 Span"),
+       col=c("red", "blue","green"), lty=1)
+```
+

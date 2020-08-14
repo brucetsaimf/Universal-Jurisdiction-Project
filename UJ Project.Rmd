@@ -1,6 +1,8 @@
 ---
 title: "UJ Project"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r}
@@ -43,14 +45,9 @@ states[states$`prosecuting state` == "New_Zealand","prosecuting state"] = "New Z
 states[states$`prosecuting state` == "The_Netherlands","prosecuting state"] = "Netherlands"
 states$`prosecuting state` = factor(states$`prosecuting state`)
 states_pros = data.frame(summary(states$`prosecuting state`))
-
-
-
-states_edges = summarise(group_by(states, `def nationality state`, `prosecuting state`), count = n())
-states_nodes = unique(c(levels(states$`def nationality state`), levels(states$`prosecuting state`)))
 ```
 
-# World Map Plot Data Preprocessing
+## World Map Plot Data Preprocessing
 
 ```{r}
 world_map = map_data("world")
@@ -61,10 +58,35 @@ states_pros["United States", "region"] = "USA"
 states_def = data.frame(region = row.names(states_def), states_def)
 states_def[,"region"] = as.character(states_def[,"region"])
 states_def["United States", "region"] = "USA"
+
+# 1960 - 1980 data
+states_def1960 = data.frame(summary(states %>% filter(`Case Year` <= 1980) %>% pull(`def nationality state`)))
+states_pros1960 = data.frame(summary(states %>% filter(`Case Year` <= 1980) %>% pull(`prosecuting state`)))
+states_pros1960$region = rownames(states_pros1960)
+states_def1960$region = rownames(states_def1960)
+states_pros1960["United States", "region"] = "USA"
+states_def1960["United States", "region"] = "USA"
+
+# 1980 - 2000 data
+states_def1980 = data.frame(summary(states %>% filter(`Case Year` > 1980 & `Case Year` <= 2000) %>% pull(`def nationality state`)))
+states_pros1980 = data.frame(summary(states %>% filter(`Case Year` > 1980 & `Case Year` <= 2000) %>% pull(`prosecuting state`)))
+states_pros1980$region = rownames(states_pros1980)
+states_def1980$region = rownames(states_def1980)
+states_pros1980["United States", "region"] = "USA"
+states_def1980["United States", "region"] = "USA"
+
+# 2000 - Present data
+states_def2000 = data.frame(summary(states %>% filter(`Case Year` > 2000) %>% pull(`def nationality state`)))
+states_pros2000 = data.frame(summary(states %>% filter(`Case Year` > 2000) %>% pull(`prosecuting state`)))
+states_pros2000$region = rownames(states_pros2000)
+states_def2000$region = rownames(states_def2000)
+states_pros2000["United States", "region"] = "USA"
+states_def2000["United States", "region"] = "USA"
 ```
 
-# World Map Plot Data by Prosecuting
+# World Map Plot Data
 
+## All Time Prosecuting
 ```{r}
 pros.map <- full_join(states_pros, world_map, by = "region")
 colnames(pros.map)[2] = "Number.of.Prosecuting.Cases"
@@ -72,11 +94,11 @@ pros.map$Number.of.Prosecuting.Cases[is.na(pros.map$Number.of.Prosecuting.Cases)
 ggplot(pros.map, aes(long, lat, group = group))+
   geom_polygon(aes(fill = Number.of.Prosecuting.Cases), color = "white") +
   scale_fill_gradient(low = "white", high = "black") +
-  labs(fill='Number of Prosecuting Cases') 
+  labs(fill='Number of Prosecuting Cases') +
+  ggtitle("Number of Prosecuting Cases All-Time")
 ```
 
-# World Map Plot Data by Defending
-
+## All Time Defending
 ```{r}
 def.map <- full_join(states_def, world_map, by = "region")
 colnames(def.map)[2] = "Number.of.Defendant.Cases"
@@ -87,7 +109,87 @@ ggplot(def.map, aes(long, lat, group = group))+
   labs(fill='Number of Defendant Cases') 
 ```
 
+## 1960-1980 Prosecuting
+
+```{r}
+pros.map1960 <- full_join(states_pros1960, world_map, by = "region")
+colnames(pros.map1960)[1] = "Number.of.Prosecuting.Cases"
+pros.map1960$Number.of.Prosecuting.Cases[which(is.na(pros.map1960$Number.of.Prosecuting.Cases))] = 0
+ggplot(pros.map1960, aes(long, lat, group = group))+
+  geom_polygon(aes(fill = Number.of.Prosecuting.Cases), color = "white") +
+  scale_fill_gradient(low = "white", high = "black") +
+  labs(fill='Number of Prosecuting Cases') +
+  ggtitle("Number of Prosecuting Cases 1960 - 1980")
+```
+
+## 1960 - 1980 Defending
+
+```{r}
+def.map1960 <- full_join(states_def1960, world_map, by = "region")
+colnames(def.map1960)[1] = "Number.of.Defending.Cases"
+def.map1960$Number.of.Defending.Cases[which(is.na(def.map1960$Number.of.Defending.Cases))] = 0
+ggplot(def.map1960, aes(long, lat, group = group))+
+  geom_polygon(aes(fill = Number.of.Defending.Cases), color = "white") +
+  scale_fill_gradient(low = "white", high = "black") +
+  labs(fill='Number of Defending Cases') +
+  ggtitle("Number of Defending Cases 1960 - 1980")
+```
+
+## 1980 - 2000 Prosecuting
+
+```{r}
+pros.map1980 <- full_join(states_pros1980, world_map, by = "region")
+colnames(pros.map1980)[1] = "Number.of.Prosecuting.Cases"
+pros.map1980$Number.of.Prosecuting.Cases[which(is.na(pros.map1980$Number.of.Prosecuting.Cases))] = 0
+ggplot(pros.map1980, aes(long, lat, group = group))+
+  geom_polygon(aes(fill = Number.of.Prosecuting.Cases), color = "white") +
+  scale_fill_gradient(low = "white", high = "black") +
+  labs(fill='Number of Prosecuting Cases') +
+  ggtitle("Number of Prosecuting Cases 1980 - 2000")
+```
+
+## 1980 - 2000 Defending
+
+```{r}
+def.map1980 <- full_join(states_def1980, world_map, by = "region")
+colnames(def.map1980)[1] = "Number.of.Defending.Cases"
+def.map1980$Number.of.Defending.Cases[which(is.na(def.map1980$Number.of.Defending.Cases))] = 0
+ggplot(def.map1980, aes(long, lat, group = group))+
+  geom_polygon(aes(fill = Number.of.Defending.Cases), color = "white") +
+  scale_fill_gradient(low = "white", high = "black") +
+  labs(fill='Number of Defending Cases') +
+  ggtitle("Number of Defending Cases 1980 - 2000")
+```
+
+## 2000 - Present Prosecuting
+
+```{r}
+pros.map2000 <- full_join(states_pros2000, world_map, by = "region")
+colnames(pros.map2000)[1] = "Number.of.Prosecuting.Cases"
+pros.map2000$Number.of.Prosecuting.Cases[which(is.na(pros.map2000$Number.of.Prosecuting.Cases))] = 0
+ggplot(pros.map2000, aes(long, lat, group = group))+
+  geom_polygon(aes(fill = Number.of.Prosecuting.Cases), color = "white") +
+  scale_fill_gradient(low = "white", high = "black") +
+  labs(fill='Number of Prosecuting Cases') +
+  ggtitle("Number of Prosecuting Cases 2000 - Present")
+```
+
+## 2000 - Present Defending
+
+```{r}
+def.map2000 <- full_join(states_def2000, world_map, by = "region")
+colnames(def.map2000)[1] = "Number.of.Defending.Cases"
+def.map2000$Number.of.Defending.Cases[which(is.na(def.map2000$Number.of.Defending.Cases))] = 0
+ggplot(def.map2000, aes(long, lat, group = group))+
+  geom_polygon(aes(fill = Number.of.Defending.Cases), color = "white") +
+  scale_fill_gradient(low = "white", high = "black") +
+  labs(fill='Number of Defending Cases') +
+  ggtitle("Number of Defending Cases 2000 - Present")
+```
+
 # Cases by Year with LOESS smoother
+
+## LOESS Plot
 
 ```{r}
 case_by_year = data.frame(summarise(group_by(states, `Case Year`), count = n()))
@@ -98,7 +200,7 @@ lw7 = loess(count ~. , data = case_by_year, span = 0.7)
 smoothed3 = predict(lw3) 
 smoothed5 = predict(lw5) 
 smoothed7 = predict(lw7) 
-plot(case_by_year$count, x=case_by_year$Case.Year, type="l", main="Loess Smoothing and Prediction", xlab="Year", ylab="Counts")
+plot(case_by_year$count, x=case_by_year$Case.Year, type="l", main="Loess Smoothing and Prediction for Cases by Year", xlab="Year", ylab="Counts")
 lines(smoothed3, x=case_by_year$Case.Year, col="red")
 lines(smoothed5, x=case_by_year$Case.Year, col="blue")
 lines(smoothed7, x=case_by_year$Case.Year, col="green")
@@ -109,6 +211,7 @@ legend("topleft", legend=c("LOESS 0.3 Span", "LOESS 0.5 Span", "LOESS 0.7 Span")
 # Trials by Year with LOESS smoother
 
 ## Clean Trial Date Data
+
 ```{r}
 states = data.frame(states)
 states$Initial_Trial_Start_Date = factor(states$Initial_Trial_Start_Date)
@@ -154,7 +257,7 @@ lw7a = loess(count ~. , data = trial_by_year, span = 0.7)
 smoothed3a = predict(lw3a) 
 smoothed5a = predict(lw5a) 
 smoothed7a = predict(lw7a) 
-plot(trial_by_year$count, x=trial_by_year$TrialYear, type="l", main="Loess Smoothing and Prediction", xlab="Year", ylab="Counts")
+plot(trial_by_year$count, x=trial_by_year$TrialYear, type="l", main="Loess Smoothing and Prediction for Trials by Year", xlab="Year", ylab="Counts")
 lines(smoothed3a, x=trial_by_year$TrialYear, col="red")
 lines(smoothed5a, x=trial_by_year$TrialYear, col="blue")
 lines(smoothed7a, x=trial_by_year$TrialYear, col="green")

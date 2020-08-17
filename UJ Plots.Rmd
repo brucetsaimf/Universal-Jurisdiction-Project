@@ -1,5 +1,5 @@
 ---
-title: "UJ Project"
+title: "UJ Plots"
 output:
   pdf_document: default
   html_document: default

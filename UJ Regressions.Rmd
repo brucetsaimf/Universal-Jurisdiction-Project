@@ -1,0 +1,73 @@
+---
+title: "UJ Regressions"
+output: html_document
+---
+
+```{r}
+suppressMessages(library(readxl))
+suppressMessages(library(igraph))
+suppressMessages(library(tidyverse))
+suppressMessages(library(dplyr))
+suppressMessages(library(ggplot2))
+suppressMessages(library(ggraph))
+suppressMessages(library(maps))
+suppressMessages(library(lubridate))
+suppressMessages(library(janitor))
+suppressMessages(library(tibble))
+```
+
+# UJ Dataset
+
+```{r}
+uj_raw = read_xlsx("Langer-Eason Database Clean.xlsx", sheet = 1)
+uj_raw$`prosecuting state`[32] = "Germany"
+
+uj_data = uj_raw[,c(4:5,14,19,26)]
+
+# Recode States
+uj_data[uj_data$`def nationality state` == "Nazi","def nationality state"] = "Germany"
+uj_data[uj_data$`def nationality state` == "Congo_Brazzaville","def nationality state"] = "Congo"
+uj_data[uj_data$`def nationality state` == "Congo_DRC","def nationality state"] = "Congo" ######### CHECK ACTUAL CODE FOR DRC #######
+uj_data[uj_data$`def nationality state` == "ISIS/Daesh","def nationality state"] = "Iraq" # Or Syria?
+uj_data[uj_data$`def nationality state` == "The_Netherlands","def nationality state"] = "Netherlands"
+uj_data[uj_data$`def nationality state` == "Former Yugoslavia","def nationality state"] = "Serbia" # Or Montenegro?
+uj_data[uj_data$`def nationality state` == "Former_Yugoslavia","def nationality state"] = "Serbia" # Or Montenegro?
+
+uj_data[uj_data$`prosecuting state` == "New_Zealand","prosecuting state"] = "New Zealand"
+uj_data[uj_data$`prosecuting state` == "The_Netherlands","prosecuting state"] = "Netherlands"
+```
+
+# DEMIG Dataset
+
+```{r}
+demig_data = read_excel("demig-c2c-migration-flow-database-version-1-2_limited-online-edition.xlsx", sheet = "Inflow")
+```
+
+# Replication Dataset
+
+```{r}
+replication_data = read_dta("Replication_Migration_Dyadic.dta")
+```
+
+# Leblang Dataset
+
+```{r}
+leblang_data = read_dta("updated_Migration_Data_08Jan15.dta")
+```
+
+# UNHCR Dataset
+
+```{r}
+unhcr_data = read.csv("imputed.csv")
+```
+
+# CCodes
+
+```{r}
+ccode = read_excel("/Users/banana/Dropbox/Bruce RA work/Gravity Models/Root/COW-ISO-IMF country code lists.xlsx")
+ccode = ccode[,c(2:3)]
+```
+
+
+
+

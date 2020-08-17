@@ -64,10 +64,9 @@ unhcr_data = read.csv("imputed.csv")
 # CCodes
 
 ```{r}
-ccode = read_excel("/Users/banana/Dropbox/Bruce RA work/Gravity Models/Root/COW-ISO-IMF country code lists.xlsx")
+ccode = read_excel("COW-ISO-IMF country code lists.xlsx")
 ccode = ccode[,c(2:3)]
 ```
-
 
 
 

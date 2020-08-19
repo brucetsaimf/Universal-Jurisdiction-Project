@@ -170,7 +170,7 @@ def_table = states_data %>%
             `Total Cases` = sum(!is.na(Case.Year)),
             `Cases 1950 - 2000` = sum(!is.na(Case.Year) & Case.Year <= 2000),
             `Cases 2000 - Present` = sum(!is.na(Case.Year) & Case.Year > 2000),
-            `First Trial` = min(`TrialYear`, na.rm=T),
+            `First Trial` = suppressWarnings(min(`TrialYear`, na.rm=T)),
             `Total Trials` = sum(!(is.na(TrialYear))),
             `Trials 1950 - 2000` = sum(!is.na(TrialYear) & TrialYear <= 2000),
             `Trials 2000 - Present` = sum(!is.na(TrialYear) & TrialYear > 2000)) %>%
@@ -186,7 +186,7 @@ pro_table = states_data %>%
             `Total Cases` = sum(!is.na(Case.Year)),
             `Cases 1950 - 2000` = sum(!is.na(Case.Year) & Case.Year <= 2000),
             `Cases 2000 - Present` = sum(!is.na(Case.Year) & Case.Year > 2000),
-            `First Trial` = min(`TrialYear`, na.rm=T),
+            `First Trial` = suppressWarnings(min(`TrialYear`, na.rm=T)),
             `Total Trials` = sum(!(is.na(TrialYear))),
             `Trials 1950 - 2000` = sum(!is.na(TrialYear) & TrialYear <= 2000),
             `Trials 2000 - Present` = sum(!is.na(TrialYear) & TrialYear > 2000)) %>%

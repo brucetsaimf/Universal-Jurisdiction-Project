@@ -131,7 +131,9 @@ case_by_year$loess = smoothed7
 ggplot(case_by_year, aes(y=count, x=Case.Year)) +
   geom_bar(stat="identity") +
   geom_line(aes(x = Case.Year, y = loess)) +
-  labs(title = "LOESS Overlay on Case Numbers", x = "Case Year", y = "Number of Cases")
+  labs(title = "LOESS Overlay on Case Numbers", x = "Case Year", y = "Number of Cases") + 
+  geom_text(aes(x = Case.Year, y = count + 10, label = count), color = "dark grey")
+
 ```
 
 ## Trials GGPLOT
@@ -142,7 +144,8 @@ trial_by_year$loess = smoothed7a
 ggplot(trial_by_year, aes(y=count, x=TrialYear)) +
   geom_bar(stat="identity") +
   geom_line(aes(x = TrialYear, y = loess)) +
-  labs(title = "LOESS Overlay on Trial Numbers", x = "Trial Year", y = "Number of Trials")
+  labs(title = "LOESS Overlay on Trial Numbers", x = "Trial Year", y = "Number of Trials") + 
+  geom_text(aes(x = TrialYear, y = count + 0.2, label = count), color = "dark grey")
 ```
 
 

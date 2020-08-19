@@ -14,6 +14,7 @@ suppressMessages(library(maps))
 suppressMessages(library(lubridate))
 suppressMessages(library(janitor))
 suppressMessages(library(tibble))
+suppressMessages(library(haven))
 ```
 
 # UJ Dataset
@@ -27,7 +28,7 @@ uj_data = uj_raw[,c(4:5,14,19,26)]
 # Recode States
 uj_data[uj_data$`def nationality state` == "Nazi","def nationality state"] = "Germany"
 uj_data[uj_data$`def nationality state` == "Congo_Brazzaville","def nationality state"] = "Congo"
-uj_data[uj_data$`def nationality state` == "Congo_DRC","def nationality state"] = "Congo" ######### CHECK ACTUAL CODE FOR DRC #######
+uj_data[uj_data$`def nationality state` == "Congo_DRC","def nationality state"] = "Democratic Republic of the Congo"
 uj_data[uj_data$`def nationality state` == "ISIS/Daesh","def nationality state"] = "Iraq" # Or Syria?
 uj_data[uj_data$`def nationality state` == "The_Netherlands","def nationality state"] = "Netherlands"
 uj_data[uj_data$`def nationality state` == "Former Yugoslavia","def nationality state"] = "Serbia" # Or Montenegro?
@@ -35,6 +36,37 @@ uj_data[uj_data$`def nationality state` == "Former_Yugoslavia","def nationality 
 
 uj_data[uj_data$`prosecuting state` == "New_Zealand","prosecuting state"] = "New Zealand"
 uj_data[uj_data$`prosecuting state` == "The_Netherlands","prosecuting state"] = "Netherlands"
+
+uj_data = data.frame(uj_data)
+uj_data$Initial_Trial_Start_Date = factor(uj_data$Initial_Trial_Start_Date)
+
+
+states_data_clean1 = filter(uj_data, uj_data$Initial_Trial_Start_Date == "1989 (approx)")
+states_data_clean2 = filter(uj_data, uj_data$Initial_Trial_Start_Date == "1990 (approx)")
+states_data_clean3 = filter(uj_data, uj_data$Initial_Trial_Start_Date == "1994 (approx)")
+states_data_clean4 = filter(uj_data, uj_data$Initial_Trial_Start_Date == "2005")
+states_data_clean5 = filter(uj_data, uj_data$Initial_Trial_Start_Date == "NA")
+states_data_clean6 = filter(uj_data, is.na(uj_data$Initial_Trial_Start_Date))
+states_data_clean7 = filter(uj_data, !(uj_data$Initial_Trial_Start_Date == "1989 (approx)"|
+                                       uj_data$Initial_Trial_Start_Date == "1990 (approx)" |
+                                        uj_data$Initial_Trial_Start_Date == "1994 (approx)" |
+                                        uj_data$Initial_Trial_Start_Date == "2005" |
+                                        uj_data$Initial_Trial_Start_Date == "NA" |
+                                        is.na(uj_data$Initial_Trial_Start_Date)))
+
+states_data_clean1$TrialYear = 1989
+states_data_clean2$TrialYear = 1990
+states_data_clean3$TrialYear = 1994
+states_data_clean4$TrialYear = 2005
+states_data_clean5$TrialYear = NA
+states_data_clean6$TrialYear = NA
+
+states_data_clean7$Initial_Trial_Start_Date = excel_numeric_to_date(as.numeric(as.character(states_data_clean7$Initial_Trial_Start_Date)), date_system = "modern")    
+states_data_clean7$TrialYear = as.numeric(substring(states_data_clean7$Initial_Trial_Start_Date,1,4))
+
+states_data_clean7$Initial_Trial_Start_Date = as.character(states_data_clean7$Initial_Trial_Start_Date)
+
+uj_data = bind_rows(states_data_clean1,states_data_clean2,states_data_clean3,states_data_clean4,states_data_clean5,states_data_clean6,states_data_clean7)
 ```
 
 # DEMIG Dataset
@@ -66,7 +98,50 @@ unhcr_data = read.csv("imputed.csv")
 ```{r}
 ccode = read_excel("COW-ISO-IMF country code lists.xlsx")
 ccode = ccode[,c(2:3)]
+ccode = distinct(ccode, CCode, .keep_all = T)
 ```
 
+# UJ Data Aggregates by Country/Year
 
+```{r}
+def_table = uj_data %>% 
+  group_by(`def.nationality.state`) %>% 
+  summarise(`First Case` = min(`Case.Year`),
+            `Total Cases` = sum(!is.na(Case.Year)),
+            `Cases 1950 - 2000` = sum(!is.na(Case.Year) & Case.Year <= 2000),
+            `Cases 2000 - Present` = sum(!is.na(Case.Year) & Case.Year > 2000),
+            `First Trial` = suppressWarnings(min(`TrialYear`, na.rm=T)),
+            `Total Trials` = sum(!(is.na(TrialYear))),
+            `Trials 1950 - 2000` = sum(!is.na(TrialYear) & TrialYear <= 2000),
+            `Trials 2000 - Present` = sum(!is.na(TrialYear) & TrialYear > 2000)) %>%
+  mutate(`First Trial` = ifelse(is.infinite(`First Trial`), NA, `First Trial`))
+
+pro_table = uj_data %>% 
+  group_by(`prosecuting.state`) %>% 
+  summarise(`First Case` = min(`Case.Year`),
+            `Total Cases` = sum(!is.na(Case.Year)),
+            `Cases 1950 - 2000` = sum(!is.na(Case.Year) & Case.Year <= 2000),
+            `Cases 2000 - Present` = sum(!is.na(Case.Year) & Case.Year > 2000),
+            `First Trial` = suppressWarnings(min(`TrialYear`, na.rm=T)),
+            `Total Trials` = sum(!(is.na(TrialYear))),
+            `Trials 1950 - 2000` = sum(!is.na(TrialYear) & TrialYear <= 2000),
+            `Trials 2000 - Present` = sum(!is.na(TrialYear) & TrialYear > 2000)) %>%
+  mutate(`First Trial` = ifelse(is.infinite(`First Trial`), NA, `First Trial`))
+```
+
+# Merge UJ Dataset with CCode
+
+```{r}
+pro_table[pro_table$prosecuting.state == "United States", "prosecuting.state"] = "United States of America"
+pro_table = inner_join(pro_table,ccode,by = c("prosecuting.state" = "StateNme"))
+
+def_table[def_table$def.nationality.state == "United States", "def.nationality.state"] = "United States of America"
+def_table = inner_join(def_table,ccode,by = c("def.nationality.state" = "StateNme"))
+```
+
+# Merge UJ Dataset with Replication Data
+
+```{r}
+case_by_year = data.frame(summarise(group_by(states, `Case.Year`), count = n()))
+```
 

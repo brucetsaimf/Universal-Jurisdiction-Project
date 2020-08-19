@@ -163,31 +163,33 @@ def_table = states_data %>%
   group_by(`def.nationality.state`) %>% 
   summarise(`First Case` = min(`Case.Year`),
             `Total Cases` = sum(!is.na(Case.Year)),
-            `Cases 1950 - 2000` = length(Case.Year[Case.Year <= 2000]),
-            `Cases 2000 - Present` = length(Case.Year[Case.Year > 2000]),
+            `Cases 1950 - 2000` = sum(!is.na(Case.Year) & Case.Year <= 2000),
+            `Cases 2000 - Present` = sum(!is.na(Case.Year) & Case.Year > 2000),
             `First Trial` = min(`TrialYear`, na.rm=T),
             `Total Trials` = sum(!(is.na(TrialYear))),
-            `Trials 1950 - 2000` = length(Case.Year[Case.Year <= 2000 & !(is.na(states_data$TrialYear))]),
-            `Trials 2000 - Present` = length(Case.Year[Case.Year > 2000 & !(is.na(states_data$TrialYear))])) %>%
+            `Trials 1950 - 2000` = sum(!is.na(TrialYear) & TrialYear <= 2000),
+            `Trials 2000 - Present` = sum(!is.na(TrialYear) & TrialYear > 2000)) %>%
   mutate(`First Trial` = ifelse(is.infinite(`First Trial`), NA, `First Trial`))
 
 def_table = arrange(def_table, desc(`Total Cases`))
 def_table
-write.csv(def_table,"Defending States Table")
+write.csv(def_table,"Defending States Table.csv")
 
 pro_table = states_data %>% 
   group_by(`prosecuting.state`) %>% 
   summarise(`First Case` = min(`Case.Year`),
             `Total Cases` = sum(!is.na(Case.Year)),
-            `Cases 1950 - 2000` = length(Case.Year[Case.Year <= 2000]),
-            `Cases 2000 - Present` = length(Case.Year[Case.Year > 2000]),
+            `Cases 1950 - 2000` = sum(!is.na(Case.Year) & Case.Year <= 2000),
+            `Cases 2000 - Present` = sum(!is.na(Case.Year) & Case.Year > 2000),
             `First Trial` = min(`TrialYear`, na.rm=T),
             `Total Trials` = sum(!(is.na(TrialYear))),
-            `Trials 1950 - 2000` = length(Case.Year[Case.Year <= 2000 & !(is.na(states_data$TrialYear))]),
-            `Trials 2000 - Present` = length(Case.Year[Case.Year > 2000 & !(is.na(states_data$TrialYear))])) %>%
+            `Trials 1950 - 2000` = sum(!is.na(TrialYear) & TrialYear <= 2000),
+            `Trials 2000 - Present` = sum(!is.na(TrialYear) & TrialYear > 2000)) %>%
   mutate(`First Trial` = ifelse(is.infinite(`First Trial`), NA, `First Trial`))
 
 pro_table = arrange(pro_table, desc(`Total Cases`))
 pro_table
-write.csv(pro_table,"Prosecuting States Table")
+write.csv(pro_table,"Prosecuting States Table.csv")
+
+sum(!is.na(Case.Year) & Case.Year <= 2000)
 ```

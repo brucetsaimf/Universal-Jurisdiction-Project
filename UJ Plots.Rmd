@@ -130,7 +130,8 @@ case_by_year$loess = smoothed7
 
 ggplot(case_by_year, aes(y=count, x=Case.Year)) +
   geom_bar(stat="identity") +
-  geom_line(aes(x = Case.Year, y = loess))
+  geom_line(aes(x = Case.Year, y = loess)) +
+  labs(title = "LOESS Overlay on Case Numbers", x = "Case Year", y = "Number of Cases")
 ```
 
 ## Trials GGPLOT
@@ -140,7 +141,8 @@ trial_by_year$loess = smoothed7a
 
 ggplot(trial_by_year, aes(y=count, x=TrialYear)) +
   geom_bar(stat="identity") +
-  geom_line(aes(x = TrialYear, y = loess))
+  geom_line(aes(x = TrialYear, y = loess)) +
+  labs(title = "LOESS Overlay on Trial Numbers", x = "Trial Year", y = "Number of Trials")
 ```
 
 
@@ -190,6 +192,4 @@ pro_table = states_data %>%
 pro_table = arrange(pro_table, desc(`Total Cases`))
 pro_table
 write.csv(pro_table,"Prosecuting States Table.csv")
-
-sum(!is.na(Case.Year) & Case.Year <= 2000)
 ```

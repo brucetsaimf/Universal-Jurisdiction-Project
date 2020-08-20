@@ -142,6 +142,62 @@ def_table = inner_join(def_table,ccode,by = c("def.nationality.state" = "StateNm
 # Merge UJ Dataset with Replication Data
 
 ```{r}
-case_by_year = data.frame(summarise(group_by(states, `Case.Year`), count = n()))
+pro_data = uj_data %>% group_by(prosecuting.state, Case.Year) %>%
+  summarise(count = n())
+def_data = uj_data %>% group_by(def.nationality.state, Case.Year) %>%
+  summarise(count = n())
+
+pro_data = inner_join(pro_data,ccode,by = c("prosecuting.state" = "StateNme"))
+def_data = inner_join(def_data,ccode,by = c("def.nationality.state" = "StateNme"))
+
+colnames(pro_data)[3] = "prosecuting.count"
+colnames(def_data)[3] = "defending.count"
+
+merged_data = inner_join(replication_data,pro_data,by = c("ccode2" = "CCode", "year" = "Case.Year"))
+merged_data = inner_join(merged_data,def_data,by = c("ccode1" = "CCode", "year" = "Case.Year"))
+```
+
+# Merge Leblang Data with CCode
+
+```{r}
+ccode = read_excel("COW-ISO-IMF country code lists.xlsx")
+ccode = distinct(ccode, CCode, .keep_all = T)
+ccode = ccode[,c(2,4)]
+
+leblang_data = inner_join(leblang_data,ccode,by = c("iso_o" = "ISO"))
+colnames(leblang_data)[7] = "ccode1"
+
+leblang_data = inner_join(leblang_data,ccode,by = c("iso_d" = "ISO"))
+colnames(leblang_data)[8] = "ccode2"
+```
+
+# Merge Leblang Data (Leblang + Replication + UJ)
+
+```{r}
+merged_data = inner_join(merged_data,leblang_data,by = c("ccode1" = "ccode1", "ccode2" = "ccode2", "year" = "year"))
+```
+
+# Split Demig Data
+
+```{r}
+demig_coc = demig_data[demig_data$Criterion == "COC",]
+demig_cob = demig_data[demig_data$Criterion == "COB",]
+demig_cor = demig_data[demig_data$Criterion == "COR",]
+
+demig_coc = demig_coc[,c(1,16:18)]
+demig_cob = demig_cob[,c(1,16:18)]
+demig_cor = demig_cor[,c(1,16:18)]
+```
+
+# Rome Statute Data
+
+```{r}
+rome_data = read_xlsx("Data-Rome-Statute.xlsx")
+```
+
+# Merge Rome Statute
+
+```{r}
+
 ```
 

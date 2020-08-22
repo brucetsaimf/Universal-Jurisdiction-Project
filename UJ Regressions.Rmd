@@ -164,10 +164,10 @@ ccode = read_excel("COW-ISO-IMF country code lists.xlsx")
 ccode = distinct(ccode, CCode, .keep_all = T)
 ccode = ccode[,c(2,4)]
 
-leblang_data = inner_join(leblang_data,ccode,by = c("iso_o" = "ISO"))
+leblang_data = left_join(leblang_data,ccode,by = c("iso_o" = "ISO"))
 colnames(leblang_data)[7] = "ccode1"
 
-leblang_data = inner_join(leblang_data,ccode,by = c("iso_d" = "ISO"))
+leblang_data = left_join(leblang_data,ccode,by = c("iso_d" = "ISO"))
 colnames(leblang_data)[8] = "ccode2"
 ```
 
@@ -193,11 +193,31 @@ demig_cor = demig_cor[,c(1,16:18)]
 
 ```{r}
 rome_data = read_xlsx("Data-Rome-Statute.xlsx")
+rome_data = rome_data[,c(1,2,4)]
+rome_data[rome_data$StateName == "United States", "StateName"] = "United States of America"
 ```
 
-# Merge Rome Statute
+# Merge Rome Statute with CCode
 
 ```{r}
+ccode = read_excel("COW-ISO-IMF country code lists.xlsx")
+ccode = distinct(ccode, CCode, .keep_all = T)
+ccode = ccode[,c(2,3)]
 
+rome_data = inner_join(rome_data,ccode,by = c("StateName" = "StateNme"))
+```
+
+# Merge Rome Statute with Main Data
+
+```{r}
+merged_data = merged_data %>%  left_join(rome_data[,c(2:4)],by = c("ccode2" = "CCode"))
+merged_data = merged_data %>% rowwise() %>% mutate(romesigned = ifelse(`Sign-Start` <= `year`, 1, 0))
+merged_data = merged_data %>% rowwise() %>% mutate(romeratify = ifelse(`Ratify-Start` <= `year`, 1, 0))
+```
+
+# Merge Refugee with Main Data
+
+```{r}
+merged_data %>%  left_join(unhcr_data,by = c("ccode1" = "origin_ccode", "ccode2" = "asylum_ccode", "year" = "year"))
 ```
 

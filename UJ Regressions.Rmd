@@ -153,8 +153,8 @@ def_data = inner_join(def_data,ccode,by = c("def.nationality.state" = "StateNme"
 colnames(pro_data)[3] = "prosecuting.count"
 colnames(def_data)[3] = "defending.count"
 
-merged_data = inner_join(replication_data,pro_data,by = c("ccode2" = "CCode", "year" = "Case.Year"))
-merged_data = inner_join(merged_data,def_data,by = c("ccode1" = "CCode", "year" = "Case.Year"))
+merged_data = left_join(replication_data,pro_data,by = c("ccode2" = "CCode", "year" = "Case.Year"))
+merged_data = left_join(merged_data,def_data,by = c("ccode1" = "CCode", "year" = "Case.Year"))
 ```
 
 # Merge Leblang Data with CCode
@@ -218,6 +218,27 @@ merged_data = merged_data %>% rowwise() %>% mutate(romeratify = ifelse(`Ratify-S
 # Merge Refugee with Main Data
 
 ```{r}
-merged_data %>%  left_join(unhcr_data,by = c("ccode1" = "origin_ccode", "ccode2" = "asylum_ccode", "year" = "year"))
+merged_data = merged_data %>%  left_join(unhcr_data,by = c("ccode1" = "origin_ccode", "ccode2" = "asylum_ccode", "year" = "year"))
 ```
 
+# DPI data + Merge with CCode
+
+```{r}
+dpi_data = read.csv("DPI2017_basefile_Jan2018.csv")
+dpi_data = dpi_data[,c("countryname","ifs","year","execrlc")]
+
+ccode = read_excel("COW-ISO-IMF country code lists.xlsx")
+ccode = distinct(ccode, CCode, .keep_all = T)
+ccode = ccode[,c(2,4)]
+
+dpi_data = inner_join(dpi_data,ccode,by = c("ifs" = "ISO"))
+```
+
+# Merge DPI with Main Data
+
+```{r}
+merged_data = merged_data %>%  left_join(dpi_data[,c(3,4,5)],by = c("ccode2" = "CCode", "year" = "year"))
+```
+
+
+# Regressions!

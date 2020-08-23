@@ -150,11 +150,25 @@ def_data = uj_data %>% group_by(def.nationality.state, Case.Year) %>%
 pro_data = inner_join(pro_data,ccode,by = c("prosecuting.state" = "StateNme"))
 def_data = inner_join(def_data,ccode,by = c("def.nationality.state" = "StateNme"))
 
-colnames(pro_data)[3] = "prosecuting.count"
-colnames(def_data)[3] = "defending.count"
+colnames(pro_data)[3] = "prosecuting.casecount"
+colnames(def_data)[3] = "defending.casecount"
+
+pro_data_trial = uj_data %>% group_by(prosecuting.state, TrialYear) %>% drop_na() %>%
+  summarise(count = n())
+def_data_trial = uj_data %>% group_by(def.nationality.state, TrialYear) %>% drop_na() %>%
+  summarise(count = n())
+
+pro_data_trial = inner_join(pro_data_trial,ccode,by = c("prosecuting.state" = "StateNme"))
+def_data_trial = inner_join(def_data_trial,ccode,by = c("def.nationality.state" = "StateNme"))
+
+colnames(pro_data_trial)[3] = "prosecuting.trialcount"
+colnames(def_data_trial)[3] = "defending.trialcount"
 
 merged_data = left_join(replication_data,pro_data,by = c("ccode2" = "CCode", "year" = "Case.Year"))
 merged_data = left_join(merged_data,def_data,by = c("ccode1" = "CCode", "year" = "Case.Year"))
+
+merged_data = left_join(merged_data,pro_data_trial,by = c("ccode2" = "CCode", "year" = "TrialYear"))
+merged_data = left_join(merged_data,def_data_trial,by = c("ccode1" = "CCode", "year" = "TrialYear"))
 ```
 
 # Merge Leblang Data with CCode
@@ -240,5 +254,104 @@ dpi_data = inner_join(dpi_data,ccode,by = c("ifs" = "ISO"))
 merged_data = merged_data %>%  left_join(dpi_data[,c(3,4,5)],by = c("ccode2" = "CCode", "year" = "year"))
 ```
 
+# Add Logistic Variable for Cases and Trials
+
+```{r}
+merged_data = merged_data %>% rowwise() %>% mutate(anydefendingcase = ifelse(`defending.casecount` > 0, 1, 0))
+merged_data = merged_data %>% rowwise() %>% mutate(anyprosecutingcase = ifelse(`prosecuting.casecount` > 0, 1, 0))
+merged_data = merged_data %>% rowwise() %>% mutate(anydefendingtrial = ifelse(`defending.trialcount` > 0, 1, 0))
+merged_data = merged_data %>% rowwise() %>% mutate(anyprosecutingtrial = ifelse(`prosecuting.trialcount` > 0, 1, 0))
+```
+
 
 # Regressions!
+
+Case(s) per year ~ migrant stock + controls + error
+
+Trial(s) per year ~ migrant stock + controls + error
+
+Controls: polity score country 1 + polity score country 2+  civil violence 2+ population 1 + population 2+ gdp/ capita 1 + gdp/ capita 2+ imports + exports + alliance + war + distance + shared border + colonial history + shared language + year + romesigned + romeratify 
+
+Migrant stocks and all the controls come from the Miller & Peters replication data
+Then run the same regressions but replacing migrant stocks with the Leblang flows, the Demig C2C flows, and the Refugee flows
+
+## Replication migrant stocks OLS Regression
+```{r}
+# Cases
+replication_model_caseprosecuting = lm(prosecuting.casecount ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+replication_model_casedefending = lm(defending.casecount ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+summary(replication_model_caseprosecuting)
+summary(replication_model_casedefending)
+
+# Trials
+replication_model_trialprosecuting = lm(prosecuting.trialcount ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+replication_model_trialdefending = lm(defending.trialcount ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+summary(replication_model_trialprosecuting)
+summary(replication_model_trialdefending)
+```
+
+## Leblang flows OLS Regression
+```{r}
+# Cases
+leblang_model_caseprosecuting = lm(prosecuting.casecount ~ newflow + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+leblang_model_casedefending = lm(defending.casecount ~ newflow + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+summary(leblang_model_caseprosecuting)
+summary(leblang_model_casedefending)
+
+# Trials
+leblang_model_trialprosecuting = lm(prosecuting.trialcount ~ newflow + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+leblang_model_trialdefending = lm(defending.trialcount ~ newflow + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+summary(leblang_model_trialprosecuting)
+summary(leblang_model_trialdefending)
+```
+
+## Refugee OLS Regression
+```{r}
+# Cases
+refugee_model_caseprosecuting = lm(prosecuting.casecount ~ y + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+refugee_model_casedefending = lm(defending.casecount ~ y + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+summary(refugee_model_caseprosecuting)
+summary(refugee_model_casedefending)
+
+# Trials
+refugee_model_trialprosecuting = lm(prosecuting.trialcount ~ y + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+refugee_model_trialdefending = lm(defending.trialcount ~ y + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+summary(refugee_model_trialprosecuting)
+summary(refugee_model_trialdefending)
+```

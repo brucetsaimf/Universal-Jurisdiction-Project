@@ -15,6 +15,8 @@ suppressMessages(library(lubridate))
 suppressMessages(library(janitor))
 suppressMessages(library(tibble))
 suppressMessages(library(haven))
+suppressMessages(library(jtools))
+suppressMessages(library(huxtable))
 ```
 
 # UJ Dataset
@@ -401,6 +403,9 @@ demigcob_model_casedefending = lm(defending.casecount ~ COB.Flow + polity_s_1 + 
 summary(demigcob_model_caseprosecuting)
 summary(demigcob_model_casedefending)
 
+```
+
+```{r, eval = F}
 # Trials
 demigcob_model_trialprosecuting = lm(prosecuting.trialcount ~ COB.Flow + polity_s_1 + polity_s_2 + violence_domestic_2 +
                          lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
@@ -427,7 +432,9 @@ demigcor_model_casedefending = lm(defending.casecount ~ COR.Flow + polity_s_1 + 
 
 summary(demigcor_model_caseprosecuting)
 summary(demigcor_model_casedefending)
+```
 
+```{r, eval = F}
 # Trials
 demigcor_model_trialprosecuting = lm(prosecuting.trialcount ~ COR.Flow + polity_s_1 + polity_s_2 + violence_domestic_2 +
                          lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
@@ -454,7 +461,9 @@ demigcoc_model_casedefending = lm(defending.casecount ~ COC.Flow + polity_s_1 + 
 
 summary(demigcoc_model_caseprosecuting)
 summary(demigcoc_model_casedefending)
+```
 
+```{r, eval = F}
 # Trials
 demigcoc_model_trialprosecuting = lm(prosecuting.trialcount ~ COC.Flow + polity_s_1 + polity_s_2 + violence_domestic_2 +
                          lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
@@ -466,4 +475,41 @@ demigcoc_model_trialdefending = lm(defending.trialcount ~ COC.Flow + polity_s_1 
 
 summary(demigcoc_model_trialprosecuting)
 summary(demigcoc_model_trialdefending)
+```
+
+# Outputs
+
+```{r}
+# Replication Cases
+export_summs(replication_model_caseprosecuting, replication_model_casedefending, model.names = c("Replication Data Prosecuting Cases", "Replication Data Defending Cases"), scale = TRUE)
+
+# Replication Trials
+export_summs(replication_model_trialprosecuting, replication_model_trialdefending, model.names = c("Replication Data Prosecuting Trials", "Replication Data Defending Trials"), scale = TRUE)
+```
+
+```{r}
+# Leblang Cases
+export_summs(leblang_model_caseprosecuting, leblang_model_casedefending, model.names = c("Leblang Data Prosecuting Cases", "Leblang Data Defending Cases"), scale = TRUE)
+
+# Leblang Trials
+export_summs(leblang_model_trialprosecuting, leblang_model_trialdefending, model.names = c("Leblang Data Prosecuting Trials", "Leblang Data Defending Trials"), scale = TRUE)
+```
+
+```{r}
+# Refugee Cases
+export_summs(refugee_model_caseprosecuting, refugee_model_casedefending, model.names = c("Refugee Data Prosecuting Cases", "Refugee Data Defending Cases"), scale = TRUE)
+
+# Refugee Trials
+export_summs(refugee_model_trialprosecuting, refugee_model_trialdefending, model.names = c("Refugee Data Prosecuting Trials", "Refugee Data Defending Trials"), scale = TRUE)
+```
+
+```{r}
+# Demig COR Cases
+export_summs(demigcor_model_caseprosecuting, demigcor_model_casedefending, model.names = c("Demig COR Prosecuting Cases", "Demig COR Defending Cases"), scale = TRUE)
+
+# Demig COB Cases
+export_summs(demigcob_model_caseprosecuting, demigcob_model_casedefending, model.names = c("Demig COB Prosecuting Cases", "Demig COB Defending Cases"), scale = TRUE)
+
+# Demig COC Cases
+export_summs(demigcoc_model_caseprosecuting, demigcoc_model_casedefending, model.names = c("Demig COC Prosecuting Cases", "Demig COC Defending Cases"), scale = TRUE)
 ```

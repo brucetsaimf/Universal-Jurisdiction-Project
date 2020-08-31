@@ -17,7 +17,16 @@ suppressMessages(library(tibble))
 suppressMessages(library(haven))
 suppressMessages(library(jtools))
 suppressMessages(library(huxtable))
+suppressMessages(library(devtools))
+suppressMessages(library(Zelig))
+suppressMessages(library(psych))
+suppressMessages(library(Hmisc))
+suppressMessages(library(fts))
+suppressMessages(library(zoo))
+suppressMessages(library(runner))
 ```
+
+Note: Zelig is unavailable through CRAN. Run devtools::install_github('IQSS/Zelig') to install package.
 
 # UJ Dataset
 
@@ -291,24 +300,14 @@ replication_model_caseprosecuting = lm(prosecuting.casecount ~ lwbstocksout_full
                          lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
                          factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
 
-replication_model_casedefending = lm(defending.casecount ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 +
-                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
-                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
-
 summary(replication_model_caseprosecuting)
-summary(replication_model_casedefending)
 
 # Trials
 replication_model_trialprosecuting = lm(prosecuting.trialcount ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 +
                          lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
                          factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
 
-replication_model_trialdefending = lm(defending.trialcount ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 +
-                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
-                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
-
 summary(replication_model_trialprosecuting)
-summary(replication_model_trialdefending)
 ```
 
 ## Leblang flows OLS Regression
@@ -318,24 +317,14 @@ leblang_model_caseprosecuting = lm(prosecuting.casecount ~ newflow + polity_s_1 
                          lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
                          factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
 
-leblang_model_casedefending = lm(defending.casecount ~ newflow + polity_s_1 + polity_s_2 + violence_domestic_2 +
-                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
-                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
-
 summary(leblang_model_caseprosecuting)
-summary(leblang_model_casedefending)
 
 # Trials
 leblang_model_trialprosecuting = lm(prosecuting.trialcount ~ newflow + polity_s_1 + polity_s_2 + violence_domestic_2 +
                          lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
                          factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
 
-leblang_model_trialdefending = lm(defending.trialcount ~ newflow + polity_s_1 + polity_s_2 + violence_domestic_2 +
-                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
-                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
-
 summary(leblang_model_trialprosecuting)
-summary(leblang_model_trialdefending)
 ```
 
 ## Refugee OLS Regression
@@ -345,24 +334,14 @@ refugee_model_caseprosecuting = lm(prosecuting.casecount ~ y + polity_s_1 + poli
                          lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
                          factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
 
-refugee_model_casedefending = lm(defending.casecount ~ y + polity_s_1 + polity_s_2 + violence_domestic_2 +
-                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
-                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
-
 summary(refugee_model_caseprosecuting)
-summary(refugee_model_casedefending)
 
 # Trials
 refugee_model_trialprosecuting = lm(prosecuting.trialcount ~ y + polity_s_1 + polity_s_2 + violence_domestic_2 +
                          lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
                          factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
 
-refugee_model_trialdefending = lm(defending.trialcount ~ y + polity_s_1 + polity_s_2 + violence_domestic_2 +
-                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
-                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
-
 summary(refugee_model_trialprosecuting)
-summary(refugee_model_trialdefending)
 ```
 
 # Demig Merge Data
@@ -396,13 +375,9 @@ demigcob_model_caseprosecuting = lm(prosecuting.casecount ~ COB.Flow + polity_s_
                          lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
                          factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
 
-demigcob_model_casedefending = lm(defending.casecount ~ COB.Flow + polity_s_1 + polity_s_2 + violence_domestic_2 +
-                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
-                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
 
 summary(demigcob_model_caseprosecuting)
-summary(demigcob_model_casedefending)
-
 ```
 
 ```{r, eval = F}
@@ -411,12 +386,7 @@ demigcob_model_trialprosecuting = lm(prosecuting.trialcount ~ COB.Flow + polity_
                          lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
                          factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
 
-demigcob_model_trialdefending = lm(defending.trialcount ~ COB.Flow + polity_s_1 + polity_s_2 + violence_domestic_2 +
-                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
-                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
-
 summary(demigcob_model_trialprosecuting)
-summary(demigcob_model_trialdefending)
 ```
 
 # Demig COR OLS Regression
@@ -426,12 +396,7 @@ demigcor_model_caseprosecuting = lm(prosecuting.casecount ~ COR.Flow + polity_s_
                          lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
                          factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
 
-demigcor_model_casedefending = lm(defending.casecount ~ COR.Flow + polity_s_1 + polity_s_2 + violence_domestic_2 +
-                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
-                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
-
 summary(demigcor_model_caseprosecuting)
-summary(demigcor_model_casedefending)
 ```
 
 ```{r, eval = F}
@@ -440,12 +405,7 @@ demigcor_model_trialprosecuting = lm(prosecuting.trialcount ~ COR.Flow + polity_
                          lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
                          factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
 
-demigcor_model_trialdefending = lm(defending.trialcount ~ COR.Flow + polity_s_1 + polity_s_2 + violence_domestic_2 +
-                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
-                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
-
 summary(demigcor_model_trialprosecuting)
-summary(demigcor_model_trialdefending)
 ```
 
 # Demig COC OLS Regression
@@ -455,12 +415,7 @@ demigcoc_model_caseprosecuting = lm(prosecuting.casecount ~ COC.Flow + polity_s_
                          lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
                          factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
 
-demigcoc_model_casedefending = lm(defending.casecount ~ COC.Flow + polity_s_1 + polity_s_2 + violence_domestic_2 +
-                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
-                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
-
 summary(demigcoc_model_caseprosecuting)
-summary(demigcoc_model_casedefending)
 ```
 
 ```{r, eval = F}
@@ -469,47 +424,141 @@ demigcoc_model_trialprosecuting = lm(prosecuting.trialcount ~ COC.Flow + polity_
                          lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
                          factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
 
-demigcoc_model_trialdefending = lm(defending.trialcount ~ COC.Flow + polity_s_1 + polity_s_2 + violence_domestic_2 +
-                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
-                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
-
 summary(demigcoc_model_trialprosecuting)
-summary(demigcoc_model_trialdefending)
 ```
 
 # Outputs
 
 ```{r}
 # Replication Cases
-export_summs(replication_model_caseprosecuting, replication_model_casedefending, model.names = c("Replication Data Prosecuting Cases", "Replication Data Defending Cases"), scale = TRUE)
+#export_summs(replication_model_caseprosecuting, model.names = c("Replication Data Prosecuting Cases"))
 
 # Replication Trials
-export_summs(replication_model_trialprosecuting, replication_model_trialdefending, model.names = c("Replication Data Prosecuting Trials", "Replication Data Defending Trials"), scale = TRUE)
+#export_summs(replication_model_trialprosecuting, replication_model_trialdefending, model.names = c("Replication Data Prosecuting Trials", "Replication Data Defending Trials"), scale = TRUE)
 ```
 
 ```{r}
 # Leblang Cases
-export_summs(leblang_model_caseprosecuting, leblang_model_casedefending, model.names = c("Leblang Data Prosecuting Cases", "Leblang Data Defending Cases"), scale = TRUE)
+#export_summs(leblang_model_caseprosecuting, leblang_model_casedefending, model.names = c("Leblang Data Prosecuting Cases", "Leblang Data Defending Cases"), scale = TRUE)
 
 # Leblang Trials
-export_summs(leblang_model_trialprosecuting, leblang_model_trialdefending, model.names = c("Leblang Data Prosecuting Trials", "Leblang Data Defending Trials"), scale = TRUE)
+#export_summs(leblang_model_trialprosecuting, leblang_model_trialdefending, model.names = c("Leblang Data Prosecuting Trials", "Leblang Data Defending Trials"), scale = TRUE)
 ```
 
 ```{r}
 # Refugee Cases
-export_summs(refugee_model_caseprosecuting, refugee_model_casedefending, model.names = c("Refugee Data Prosecuting Cases", "Refugee Data Defending Cases"), scale = TRUE)
+#export_summs(refugee_model_caseprosecuting, refugee_model_casedefending, model.names = c("Refugee Data Prosecuting Cases", "Refugee Data Defending Cases"), scale = TRUE)
 
 # Refugee Trials
-export_summs(refugee_model_trialprosecuting, refugee_model_trialdefending, model.names = c("Refugee Data Prosecuting Trials", "Refugee Data Defending Trials"), scale = TRUE)
+#export_summs(refugee_model_trialprosecuting, refugee_model_trialdefending, model.names = c("Refugee Data Prosecuting Trials", "Refugee Data Defending Trials"), scale = TRUE)
 ```
 
 ```{r}
 # Demig COR Cases
-export_summs(demigcor_model_caseprosecuting, demigcor_model_casedefending, model.names = c("Demig COR Prosecuting Cases", "Demig COR Defending Cases"), scale = TRUE)
+#export_summs(demigcor_model_caseprosecuting, demigcor_model_casedefending, model.names = c("Demig COR Prosecuting Cases", "Demig COR Defending Cases"), scale = TRUE)
 
 # Demig COB Cases
-export_summs(demigcob_model_caseprosecuting, demigcob_model_casedefending, model.names = c("Demig COB Prosecuting Cases", "Demig COB Defending Cases"), scale = TRUE)
+#export_summs(demigcob_model_caseprosecuting, demigcob_model_casedefending, model.names = c("Demig COB Prosecuting Cases", "Demig COB Defending Cases"), scale = TRUE)
 
 # Demig COC Cases
-export_summs(demigcoc_model_caseprosecuting, demigcoc_model_casedefending, model.names = c("Demig COC Prosecuting Cases", "Demig COC Defending Cases"), scale = TRUE)
+#export_summs(demigcoc_model_caseprosecuting, demigcoc_model_casedefending, model.names = c("Demig COC Prosecuting Cases", "Demig COC Defending Cases"), scale = TRUE)
 ```
+
+# Correlation Matrix Flatten Function
+
+```{r, echo=FALSE}
+flattenCorrMatrix <- function(cormat, pmat) {
+  ut <- upper.tri(cormat)
+  data.frame(
+    row = rownames(cormat)[row(cormat)[ut]],
+    column = rownames(cormat)[col(cormat)[ut]],
+    cor  =(cormat)[ut],
+    p = pmat[ut]
+    )
+}
+```
+
+```{r}
+res1<-rcorr(as.matrix(merged_data[,c("lwbstocksout_full", "polity_s_1", "polity_s_2", "violence_domestic_2",
+                         "lpop_1", "lpop_2", "lgdpcap_1", "lgdpcap_2", "imports1000", "exports1000", "alliance", "ldist2", 
+                         "d_colony2", "langshare", "year", "romesigned", "romeratify")]))
+fulldata_corr = flattenCorrMatrix(res1$r, res1$P)
+```
+
+
+# RE Logit
+
+```{r}
+merged_data$anyprosecutingcase[which(is.na(merged_data$anyprosecutingcase))] = 0
+merged_data$anyprosecutingcase[which(is.na(merged_data$anyprosecutingtrial))] = 0
+merged_data$alliance = as.factor(merged_data$alliance)
+merged_data$d_colony2 = as.factor(merged_data$d_colony2)
+merged_data$langshare = as.factor(merged_data$langshare)
+merged_data$romesigned = as.factor(merged_data$romesigned)
+merged_data$romeratify = as.factor(merged_data$romeratify)
+
+merged_data = merged_data[complete.cases(merged_data[,c("lwbstocksout_full", "polity_s_1", "polity_s_2", "violence_domestic_2",
+                         "lpop_1", "lpop_2", "lgdpcap_1", "lgdpcap_2", "imports1000", "exports1000", "alliance", "ldist2", 
+                         "d_colony2", "langshare", "year", "romesigned", "romeratify")]),]
+
+
+replicationcase_relogit <- zelig(anyprosecutingcase ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + exports1000 + alliance + ldist2 + 
+                         d_colony2 + langshare + year + romesigned + romeratify, data = merged_data, model = "relogit")
+
+replicationtrial_relogit <- zelig(anyprosecutingtrial ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + exports1000 + alliance + ldist2 + 
+                         d_colony2 + langshare + year + romesigned + romeratify, data = merged_data, model = "relogit")
+```
+
+# Add Moving 5 Year Leblang Sum
+
+```{r}
+merged_data$leblang5y = 0
+
+for(i in 1:nrow(merged_data)){
+ 
+  merged_data$leblang5y[i] = sum(merged_data[(merged_data$year >= merged_data$year[i] - 5 &
+                                                 merged_data$year >= merged_data$year[i] &
+                                                  merged_data$ccode1 == merged_data$ccode1[i] &
+                                                  merged_data$ccode2 == merged_data$ccode2[i]),"newflow"])
+}
+```
+
+# Add Moving 5 Year Demig Sum
+
+```{r}
+#COR
+merged_data$cor5y = 0
+
+for(i in 1:nrow(merged_data)){
+ 
+  merged_data$cor5y[i] = sum(merged_data[(merged_data$year >= merged_data$year[i] - 5 &
+                                                 merged_data$year >= merged_data$year[i] &
+                                                  merged_data$ccode1 == merged_data$ccode1[i] &
+                                                  merged_data$ccode2 == merged_data$ccode2[i]),"COR.Flow"])
+}
+
+#COB
+merged_data$cob5y = 0
+
+for(i in 1:nrow(merged_data)){
+ 
+  merged_data$cob5y[i] = sum(merged_data[(merged_data$year >= merged_data$year[i] - 5 &
+                                                 merged_data$year >= merged_data$year[i] &
+                                                  merged_data$ccode1 == merged_data$ccode1[i] &
+                                                  merged_data$ccode2 == merged_data$ccode2[i]),"COB.Flow"])
+}
+
+#COC
+merged_data$coc5y = 0
+
+for(i in 1:nrow(merged_data)){
+ 
+  merged_data$coc5y[i] = sum(merged_data[(merged_data$year >= merged_data$year[i] - 5 &
+                                                 merged_data$year >= merged_data$year[i] &
+                                                  merged_data$ccode1 == merged_data$ccode1[i] &
+                                                  merged_data$ccode2 == merged_data$ccode2[i]),"COC.Flow"])
+}
+```
+

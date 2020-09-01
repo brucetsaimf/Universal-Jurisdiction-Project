@@ -24,6 +24,7 @@ suppressMessages(library(Hmisc))
 suppressMessages(library(fts))
 suppressMessages(library(zoo))
 suppressMessages(library(runner))
+suppressMessages(library(tibbletime))
 ```
 
 Note: Zelig is unavailable through CRAN. Run devtools::install_github('IQSS/Zelig') to install package.
@@ -525,6 +526,7 @@ for(i in 1:nrow(merged_data)){
 }
 ```
 
+
 # Add Moving 5 Year Demig Sum
 
 ```{r}
@@ -560,5 +562,55 @@ for(i in 1:nrow(merged_data)){
                                                   merged_data$ccode1 == merged_data$ccode1[i] &
                                                   merged_data$ccode2 == merged_data$ccode2[i]),"COC.Flow"])
 }
+
+
+write.csv(merged_data,"Full Dataframe.csv")
 ```
 
+# Leblang Lagged OLS Regressions
+
+```{r}
+# Cases
+leblanglag_model_caseprosecuting = lm(prosecuting.casecount ~ leblang5y + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+summary(leblanglag_model_caseprosecuting)
+
+# Trials
+leblanglag_model_trialprosecuting = lm(prosecuting.trialcount ~ leblang5y + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+summary(leblanglag_model_trialprosecuting)
+```
+
+# Demig COC Lagged OLS Regression
+```{r}
+# Cases
+demigcoc_laggedmodel_caseprosecuting = lm(prosecuting.casecount ~ coc5y + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+summary(demigcoc_laggedmodel_caseprosecuting)
+```
+
+# Demig COR Lagged OLS Regression
+```{r}
+# Cases
+demigcor_laggedmodel_caseprosecuting = lm(prosecuting.casecount ~ cor5y + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+summary(demigcor_laggedmodel_caseprosecuting)
+```
+
+# Demig COB Lagged OLS Regression
+```{r}
+# Cases
+demigcob_laggedmodel_caseprosecuting = lm(prosecuting.casecount ~ cob5y + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + factor(alliance) + ldist2 + 
+                         factor(d_colony2) + factor(langshare) + year + factor(romesigned) + factor(romeratify), data = merged_data) # missing shared border
+
+summary(demigcob_laggedmodel_caseprosecuting)
+```

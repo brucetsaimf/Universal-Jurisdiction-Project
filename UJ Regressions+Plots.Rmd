@@ -6,7 +6,7 @@ output:
     keep_tex: yes
 classoption: landscape
 ---
-```{r}
+```{r , include=FALSE}
 suppressMessages(library(readxl))
 suppressMessages(library(igraph))
 suppressMessages(library(tidyverse))
@@ -31,6 +31,13 @@ suppressMessages(library(tibbletime))
 suppressMessages(library(stargazer))
 suppressMessages(library(dotwhisker))
 suppressMessages(library(miceadds))
+suppressMessages(library(margins))
+suppressMessages(library(MASS))
+suppressMessages(library(lmtest))
+suppressMessages(library(car))
+suppressMessages(library(sandwich))
+suppressMessages(library(multiwayvcov))
+suppressMessages(library(knitr))
 ```
 
 Note: Zelig is unavailable through CRAN. Run devtools::install_github('IQSS/Zelig') to install package.
@@ -47,94 +54,83 @@ merged_data$d_colony2 = as.factor(merged_data$d_colony2)
 merged_data$langshare = as.factor(merged_data$langshare)
 merged_data$romesigned = as.factor(merged_data$romesigned)
 merged_data$romeratify = as.factor(merged_data$romeratify)
+merged_data = merged_data[merged_data$imports1000 > 0,]
+merged_data = merged_data[merged_data$exports1000 > 0,]
 ```
 
 # Replication migrant stocks OLS Regression
 ```{r}
 # Cases
-
-replication_model_caseprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.casecount ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(replication_model_caseprosecuting)
+replication_model_caseprosecuting_ols = lm(data = merged_data, formula = prosecuting.casecount ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+replication_model_caseprosecuting = coeftest(replication_model_caseprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 
 # Trials
-replication_model_trialprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.trialcount ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(replication_model_trialprosecuting)
+replication_model_trialprosecuting_ols = lm(data = merged_data, formula = prosecuting.trialcount ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+replication_model_trialprosecuting = coeftest(replication_model_trialprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 ```
 
 # Leblang flows OLS Regression
 ```{r}
 # Cases
-leblang_model_caseprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.casecount ~ newflow + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(leblang_model_caseprosecuting)
+leblang_model_caseprosecuting_ols = lm(data = merged_data, formula = prosecuting.casecount ~ newflow + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+leblang_model_caseprosecuting = coeftest(leblang_model_caseprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 
 # Trials
-leblang_model_trialprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.trialcount ~ newflow + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(leblang_model_trialprosecuting)
+leblang_model_trialprosecuting_ols = lm(data = merged_data, formula = prosecuting.trialcount ~ newflow + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+leblang_model_trialprosecuting = coeftest(leblang_model_trialprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 ```
 
 # Refugee OLS Regression
 ```{r}
 # No imputation Cases
-refugee_ymodel_caseprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.casecount ~ y + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(refugee_ymodel_caseprosecuting)
+refugee_ymodel_caseprosecuting_ols = lm(data = merged_data, formula = prosecuting.casecount ~ y + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+refugee_ymodel_caseprosecuting = coeftest(refugee_ymodel_caseprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 
 # No imputation Trials
-refugee_ymodel_trialprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.trialcount ~ y + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(refugee_ymodel_trialprosecuting)
+refugee_ymodel_trialprosecuting_ols = lm(data = merged_data, formula = prosecuting.trialcount ~ y + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+refugee_ymodel_trialprosecuting = coeftest(refugee_ymodel_trialprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 
 # LASSO Cases
-refugee_ylassomodel_caseprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.casecount ~ ylasso + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(refugee_ylassomodel_caseprosecuting)
+refugee_ylassomodel_caseprosecuting_ols = lm(data = merged_data, formula = prosecuting.casecount ~ ylasso + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+refugee_ylassomodel_caseprosecuting = coeftest(refugee_ylassomodel_caseprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 
 # LASSO Trials
-refugee_ylassomodel_trialprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.trialcount ~ ylasso + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(refugee_ylassomodel_trialprosecuting)
+refugee_ylassomodel_trialprosecuting_ols = lm(data = merged_data, formula = prosecuting.trialcount ~ ylasso + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+refugee_ylassomodel_trialprosecuting = coeftest(refugee_ylassomodel_trialprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 
 # Ylinpol Cases
-refugee_ylinpolmodel_caseprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.casecount ~ ylinpol + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(refugee_ylinpolmodel_caseprosecuting)
+refugee_ylinpolmodel_caseprosecuting_ols = lm(data = merged_data, formula = prosecuting.casecount ~ ylinpol + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+refugee_ylinpolmodel_caseprosecuting = coeftest(refugee_ylinpolmodel_caseprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 
 # Ylinpol Trials
-refugee_ylinpolmodel_trialprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.trialcount ~ ylinpol + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(refugee_ylinpolmodel_trialprosecuting)
+refugee_ylinpolmodel_trialprosecuting_ols = lm(data = merged_data, formula = prosecuting.trialcount ~ ylinpol + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+refugee_ylinpolmodel_trialprosecuting = coeftest(refugee_ylinpolmodel_trialprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 ```
 
 # Demig COB OLS Regression
 ```{r}
 # Cases
-demigcob_model_caseprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.casecount ~ COB.Flow + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-summary(demigcob_model_caseprosecuting)
+demigcob_model_caseprosecuting_ols = lm(data = merged_data, formula = prosecuting.casecount ~ COB.Flow + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+demigcob_model_caseprosecuting = coeftest(demigcob_model_caseprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 ```
 
 # Demig COR OLS Regression
-```{r}
+```{r, include=FALSE}
 # Cases
-demigcor_model_caseprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.casecount ~ COR.Flow + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(demigcor_model_caseprosecuting)
+demigcor_model_caseprosecuting_ols = lm(data = merged_data, formula = prosecuting.casecount ~ COR.Flow + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+demigcor_model_caseprosecuting = coeftest(demigcor_model_caseprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 ```
 
 # Demig COC OLS Regression
-```{r}
+```{r, include=FALSE}
 # Cases
-demigcoc_model_caseprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.casecount ~ COC.Flow + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(demigcoc_model_caseprosecuting)
+demigcoc_model_caseprosecuting_ols = lm(data = merged_data, formula = prosecuting.casecount ~ COC.Flow + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+demigcoc_model_caseprosecuting = coeftest(demigcoc_model_caseprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 ```
 
 # RE Logit Preprocessing
 
-```{r}
+```{r, include=FALSE}
 merged_data_firstcases = merged_data[!(is.na(merged_data$First.Case)),]
 merged_data_firstcases = merged_data_firstcases[merged_data_firstcases$First.Case >= merged_data_firstcases$year,]
 merged_data_firstcases$yrsince1957 = ifelse(merged_data_firstcases$year > 1957, merged_data_firstcases$year - 1957, 0)
@@ -152,72 +148,107 @@ merged_data_firsttrials$yrsince1957_3 = merged_data_firsttrials$yrsince1957^3
 # RE Logit
 
 ```{r}
-replicationcase_relogit = miceadds::glm.cluster(data = merged_data_firstcases, formula = anyprosecutingcase ~ lwbstocksout_full + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2  + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned, cluster="dyad", family="binomial")
+# Cases
+replicationcase_relogit_model = glm(data = merged_data_firstcases, formula = anyprosecutingcase ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, family = "binomial")
+replicationcase_relogit = coeftest(replicationcase_relogit_model, vcov=function(x) cluster.vcov(x, merged_data_firstcases$dyadid, leverage = 2))
 
-replicationtrial_relogit = miceadds::glm.cluster(data = merged_data_firsttrials, formula = anyprosecutingtrial ~ lwbstocksout_full + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2  + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned, cluster="dyad", family="binomial")
-
-summary(replicationcase_relogit)
-summary(replicationtrial_relogit)
+# Trials
+replicationtrial_relogit_model = glm(data = merged_data_firsttrials, formula = anyprosecutingtrial ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, family = "binomial")
+replicationtrial_relogit = coeftest(replicationtrial_relogit_model, vcov=function(x) cluster.vcov(x, merged_data_firsttrials$dyadid))
 ```
 
 # Leblang Lagged OLS Regressions
 
 ```{r}
 # Cases
-leblanglag_model_caseprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.casecount ~ leblang5y + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(leblanglag_model_caseprosecuting)
+leblanglag_model_caseprosecuting_ols = lm(data = merged_data, formula = prosecuting.casecount ~ leblang5y + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+leblanglag_model_caseprosecuting = coeftest(leblanglag_model_caseprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 
 # Trials
-leblanglag_model_trialprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.trialcount ~ leblang5y + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(leblanglag_model_trialprosecuting)
+leblanglag_model_trialprosecuting_ols = lm(data = merged_data, formula = prosecuting.trialcount ~ leblang5y + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+leblanglag_model_trialprosecuting = coeftest(leblanglag_model_trialprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 ```
 
 # Demig COR Lagged OLS Regression
 ```{r}
 # Cases
-demigcor_laggedmodel_caseprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.casecount ~ cor5y + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(demigcor_laggedmodel_caseprosecuting)
-
-# Trials
-demigcor_laggedmodel_trialprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.trialcount ~ cor5y + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(demigcor_laggedmodel_trialprosecuting)
+demigcor_laggedmodel_caseprosecuting_ols = lm(data = merged_data, formula = prosecuting.casecount ~ cor5y + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+demigcor_laggedmodel_caseprosecuting = coeftest(demigcor_laggedmodel_caseprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 ```
 
 # Demig COB Lagged OLS Regression
 ```{r}
 # Cases
-demigcob_laggedmodel_caseprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.casecount ~ cob5y + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(demigcob_laggedmodel_caseprosecuting)
+demigcob_laggedmodel_caseprosecuting_ols = lm(data = merged_data, formula = prosecuting.casecount ~ cob5y + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+demigcob_laggedmodel_caseprosecuting = coeftest(demigcob_laggedmodel_caseprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 ```
 
 # Demig COC Lagged OLS Regression
 ```{r}
 # Cases
-demigcoc_laggedmodel_caseprosecuting = miceadds::lm.cluster(data = merged_data, formula = prosecuting.casecount ~ coc5y + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify, cluster="dyad")
-
-summary(demigcoc_laggedmodel_caseprosecuting)
+demigcoc_laggedmodel_caseprosecuting_ols = lm(data = merged_data, formula = prosecuting.casecount ~ coc5y + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify)
+demigcoc_laggedmodel_caseprosecuting = coeftest(demigcoc_laggedmodel_caseprosecuting_ols, vcov=function(x) cluster.vcov(x, merged_data$dyadid))
 ```
 
-# Stargazer Plot
+# DPI Regressions Preprocessing
 
-```{r latexregtable, results = "asis"}
-stargazer(replication_model_caseprosecuting, replication_model_trialprosecuting, title="Replication OLS Results", from_zelig_model(replicationcase_relogit), from_zelig_model(replicationtrial_relogit), single.row = T,
-          dep.var.labels = c("Cases (count)","Trials (count)", "Cases (first)", "Trials (first)"), covariate.labels=c("Migrants stock (log)","Polity (RS)", "Polity (SS)","Violence (SS)","Population (log, RS)","Population (log, SS)", "GDPpc (log, RS)", "GDPpc (log, SS)", "Imports", "Exports", "Alliance", "Distance (log)", "Colony", "Shared Language",  "Year", "Rome (signed)", "Rome (ratified)"), order=c("lwbstocksout_full", "polity_s_1", "factor(romesigned)", "factor(romeratify)", "imports1000", "exports1000", "factor(alliance)"))
+```{r}
+merged_data_dpi = merged_data[merged_data$year >= 1975,]
+```
+
+# DPI Replication migrant stocks OLS Regression
+```{r}
+# Cases
+replication_model_caseprosecuting_ols_dpi = lm(prosecuting.casecount ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + 
+                         d_colony2 + langshare + year + romesigned + romeratify + execrlc, data = merged_data_dpi) # missing shared border
+
+replication_model_caseprosecuting_dpi = coeftest(replication_model_caseprosecuting_ols_dpi, vcov=function(x) cluster.vcov(x, merged_data_dpi$dyadid))
+
+# Trials
+replication_model_trialprosecuting_ols_dpi = lm(prosecuting.trialcount ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 +
+                         lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + 
+                         d_colony2 + langshare + year + romesigned + romeratify + execrlc, data = merged_data_dpi) # missing shared border
+
+replication_model_trialprosecuting_dpi = coeftest(replication_model_trialprosecuting_ols_dpi, vcov=function(x) cluster.vcov(x, merged_data_dpi$dyadid))
+```
+
+# DPI RE Logit Preprocessing
+
+```{r}
+merged_data_firstcases_dpi = merged_data_dpi[!(is.na(merged_data_dpi$First.Case)),]
+merged_data_firstcases_dpi = merged_data_firstcases_dpi[merged_data_firstcases_dpi$First.Case >= merged_data_firstcases_dpi$year,]
+merged_data_firstcases_dpi$yrsince1957 = ifelse(merged_data_firstcases_dpi$year > 1957, merged_data_firstcases_dpi$year - 1957, 0)
+merged_data_firstcases_dpi$yrsince1957_2 = merged_data_firstcases_dpi$yrsince1957^2
+merged_data_firstcases_dpi$yrsince1957_3 = merged_data_firstcases_dpi$yrsince1957^3
+
+merged_data_firsttrials_dpi = merged_data_dpi[!(is.na(merged_data_dpi$First.Trial)),]
+merged_data_firsttrials_dpi = merged_data_firsttrials_dpi[merged_data_firsttrials_dpi$First.Trial >= merged_data_firsttrials_dpi$year,]
+merged_data_firsttrials_dpi$yrsince1957 = ifelse(merged_data_firsttrials_dpi$year > 1957, merged_data_firsttrials_dpi$year - 1957, 0)
+merged_data_firsttrials_dpi$yrsince1957_2 = merged_data_firsttrials_dpi$yrsince1957^2
+merged_data_firsttrials_dpi$yrsince1957_3 = merged_data_firsttrials_dpi$yrsince1957^3
+```
+
+# DPI Replication migrant stocks RE Logit
+
+```{r}
+# Cases
+replicationcase_relogit_model_dpi = glm(data = merged_data_firstcases_dpi, formula = anyprosecutingcase ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify + execrlc, family = "binomial")
+replicationcase_relogit_dpi = coeftest(replicationcase_relogit_model_dpi, vcov=function(x) cluster.vcov(x, merged_data_firstcases_dpi$dyadid, leverage = 2))
+
+# Trials
+replicationtrial_relogit_model_dpi = glm(data = merged_data_firsttrials_dpi, formula = anyprosecutingtrial ~ lwbstocksout_full + polity_s_1 + polity_s_2 + violence_domestic_2 + lpop_1 + lpop_2 + lgdpcap_1 + lgdpcap_2 + imports1000 + exports1000 + alliance + ldist2 + d_colony2 + langshare + year + romesigned + romeratify + execrlc, family = "binomial")
+replicationtrial_relogit_dpi = coeftest(replicationtrial_relogit_model_dpi, vcov=function(x) cluster.vcov(x, merged_data_firsttrials_dpi$dyadid))
 ```
 
 # Coefficient Processing
 
 ## Individual Cases Model Coefficient Tables
 
-```{r, echo = FALSE}
+```{r, include=F}
 # Replication OLS
 
-replication_model_caseprosecuting_table = as.data.frame(summary(replication_model_caseprosecuting)[,c(1,2,4)])
+replication_model_caseprosecuting_table = as.data.frame(replication_model_caseprosecuting[,1:4])
 replication_model_caseprosecuting_table$stars = "." 
 
 for(i in 1:nrow(replication_model_caseprosecuting_table)){
@@ -232,9 +263,26 @@ for(i in 1:nrow(replication_model_caseprosecuting_table)){
   }
 }
 
+# Replication OLS DPI
+
+replication_model_caseprosecuting_dpi_table = as.data.frame(replication_model_caseprosecuting_dpi[,1:4])
+replication_model_caseprosecuting_dpi_table$stars = "." 
+
+for(i in 1:nrow(replication_model_caseprosecuting_dpi_table)){
+  if(replication_model_caseprosecuting_dpi_table$`Pr(>|t|)`[i] < 0.01){
+    replication_model_caseprosecuting_dpi_table$stars[i] = "***"
+  } else if (replication_model_caseprosecuting_dpi_table$`Pr(>|t|)`[i] < 0.05){
+    replication_model_caseprosecuting_dpi_table$stars[i] = "**"
+  } else if (replication_model_caseprosecuting_dpi_table$`Pr(>|t|)`[i] < 0.1){
+    replication_model_caseprosecuting_dpi_table$stars[i] = "*"
+  } else {
+    replication_model_caseprosecuting_dpi_table$stars[i] = " "
+  }
+}
+
 # Replication Logit
 
-replicationcase_relogit_table = as.data.frame(summary(replicationcase_relogit)[,c(1,2,4)])
+replicationcase_relogit_table = as.data.frame(replicationcase_relogit[,1:4])
 replicationcase_relogit_table$stars = "." 
 
 for(i in 1:nrow(replicationcase_relogit_table)){
@@ -249,9 +297,26 @@ for(i in 1:nrow(replicationcase_relogit_table)){
   }
 }
 
+# Replication Logit DPI
+
+replicationcase_relogit_dpi_table = as.data.frame(replicationcase_relogit_dpi[,1:4])
+replicationcase_relogit_dpi_table$stars = "." 
+
+for(i in 1:nrow(replicationcase_relogit_dpi_table)){
+  if(replicationcase_relogit_dpi_table$`Pr(>|z|)`[i] < 0.01){
+    replicationcase_relogit_dpi_table$stars[i] = "***"
+  } else if (replicationcase_relogit_dpi_table$`Pr(>|z|)`[i] < 0.05){
+    replicationcase_relogit_dpi_table$stars[i] = "**"
+  } else if (replicationcase_relogit_dpi_table$`Pr(>|z|)`[i] < 0.1){
+    replicationcase_relogit_dpi_table$stars[i] = "*"
+  } else {
+    replicationcase_relogit_dpi_table$stars[i] = " "
+  }
+}
+
 # Leblang OLS
 
-leblang_model_caseprosecuting_table = as.data.frame(summary(leblang_model_caseprosecuting)[,c(1,2,4)])
+leblang_model_caseprosecuting_table = as.data.frame(leblang_model_caseprosecuting[,1:4])
 leblang_model_caseprosecuting_table$stars = "." 
 
 for(i in 1:nrow(leblang_model_caseprosecuting_table)){
@@ -268,7 +333,7 @@ for(i in 1:nrow(leblang_model_caseprosecuting_table)){
 
 # Leblang 5 Year Lag OLS
 
-leblanglag_model_caseprosecuting_table = as.data.frame(summary(leblanglag_model_caseprosecuting)[,c(1,2,4)])
+leblanglag_model_caseprosecuting_table = as.data.frame(leblanglag_model_caseprosecuting[,1:4])
 leblanglag_model_caseprosecuting_table$stars = "." 
 
 for(i in 1:nrow(leblanglag_model_caseprosecuting_table)){
@@ -285,7 +350,7 @@ for(i in 1:nrow(leblanglag_model_caseprosecuting_table)){
 
 # Refugee No Imputation OLS
 
-refugee_ymodel_caseprosecuting_table = as.data.frame(summary(refugee_ymodel_caseprosecuting)[,c(1,2,4)])
+refugee_ymodel_caseprosecuting_table = as.data.frame(refugee_ymodel_caseprosecuting[,1:4])
 refugee_ymodel_caseprosecuting_table$stars = "." 
 
 for(i in 1:nrow(refugee_ymodel_caseprosecuting_table)){
@@ -302,7 +367,7 @@ for(i in 1:nrow(refugee_ymodel_caseprosecuting_table)){
 
 # Refugee Imputation 1 OLS
 
-refugee_ylassomodel_caseprosecuting_table = as.data.frame(summary(refugee_ylassomodel_caseprosecuting)[,c(1,2,4)])
+refugee_ylassomodel_caseprosecuting_table = as.data.frame(refugee_ylassomodel_caseprosecuting[,1:4])
 refugee_ylassomodel_caseprosecuting_table$stars = "." 
 
 for(i in 1:nrow(refugee_ylassomodel_caseprosecuting_table)){
@@ -317,26 +382,10 @@ for(i in 1:nrow(refugee_ylassomodel_caseprosecuting_table)){
   }
 }
 
-# Refugee Imputation 2 OLS
-
-refugee_ylinpolmodel_caseprosecuting_table = as.data.frame(summary(refugee_ylinpolmodel_caseprosecuting)[,c(1,2,4)])
-refugee_ylinpolmodel_caseprosecuting_table$stars = "." 
-
-for(i in 1:nrow(refugee_ylinpolmodel_caseprosecuting_table)){
-  if(refugee_ylinpolmodel_caseprosecuting_table$`Pr(>|t|)`[i] < 0.01){
-    refugee_ylinpolmodel_caseprosecuting_table$stars[i] = "***"
-  } else if (refugee_ylinpolmodel_caseprosecuting_table$`Pr(>|t|)`[i] < 0.05){
-    refugee_ylinpolmodel_caseprosecuting_table$stars[i] = "**"
-  } else if (refugee_ylinpolmodel_caseprosecuting_table$`Pr(>|t|)`[i] < 0.1){
-    refugee_ylinpolmodel_caseprosecuting_table$stars[i] = "*"
-  } else {
-    refugee_ylinpolmodel_caseprosecuting_table$stars[i] = " "
-  }
-}
 
 # Refugee Imputation 2 OLS
 
-refugee_ylinpolmodel_caseprosecuting_table = as.data.frame(summary(refugee_ylinpolmodel_caseprosecuting)[,c(1,2,4)])
+refugee_ylinpolmodel_caseprosecuting_table = as.data.frame(refugee_ylinpolmodel_caseprosecuting[,1:4])
 refugee_ylinpolmodel_caseprosecuting_table$stars = "." 
 
 for(i in 1:nrow(refugee_ylinpolmodel_caseprosecuting_table)){
@@ -353,7 +402,7 @@ for(i in 1:nrow(refugee_ylinpolmodel_caseprosecuting_table)){
 
 # DEMIG COR OLS
 
-demigcor_model_caseprosecuting_table = as.data.frame(summary(demigcor_model_caseprosecuting)[,c(1,2,4)])
+demigcor_model_caseprosecuting_table = as.data.frame(demigcor_model_caseprosecuting[,1:4])
 demigcor_model_caseprosecuting_table$stars = "." 
 
 for(i in 1:nrow(demigcor_model_caseprosecuting_table)){
@@ -370,7 +419,7 @@ for(i in 1:nrow(demigcor_model_caseprosecuting_table)){
 
 # DEMIG COR 5 Year Lagged OLS
 
-demigcor_laggedmodel_caseprosecuting_table = as.data.frame(summary(demigcor_laggedmodel_caseprosecuting)[,c(1,2,4)])
+demigcor_laggedmodel_caseprosecuting_table = as.data.frame(demigcor_laggedmodel_caseprosecuting[,1:4])
 demigcor_laggedmodel_caseprosecuting_table$stars = "." 
 
 for(i in 1:nrow(demigcor_laggedmodel_caseprosecuting_table)){
@@ -387,7 +436,7 @@ for(i in 1:nrow(demigcor_laggedmodel_caseprosecuting_table)){
 
 # DEMIG COB OLS
 
-demigcob_model_caseprosecuting_table = as.data.frame(summary(demigcob_model_caseprosecuting)[,c(1,2,4)])
+demigcob_model_caseprosecuting_table = as.data.frame(demigcob_model_caseprosecuting[,1:4])
 demigcob_model_caseprosecuting_table$stars = "." 
 
 for(i in 1:nrow(demigcob_model_caseprosecuting_table)){
@@ -404,7 +453,7 @@ for(i in 1:nrow(demigcob_model_caseprosecuting_table)){
 
 # DEMIG COB 5 Year Lagged OLS
 
-demigcob_laggedmodel_caseprosecuting_table = as.data.frame(summary(demigcob_laggedmodel_caseprosecuting)[,c(1,2,4)])
+demigcob_laggedmodel_caseprosecuting_table = as.data.frame(demigcob_laggedmodel_caseprosecuting[,1:4])
 demigcob_laggedmodel_caseprosecuting_table$stars = "." 
 
 for(i in 1:nrow(demigcob_laggedmodel_caseprosecuting_table)){
@@ -421,7 +470,7 @@ for(i in 1:nrow(demigcob_laggedmodel_caseprosecuting_table)){
 
 # DEMIG COC OLS
 
-demigcoc_model_caseprosecuting_table = as.data.frame(summary(demigcoc_model_caseprosecuting)[,c(1,2,4)])
+demigcoc_model_caseprosecuting_table = as.data.frame(demigcoc_model_caseprosecuting[,1:4])
 demigcoc_model_caseprosecuting_table$stars = "." 
 
 for(i in 1:nrow(demigcoc_model_caseprosecuting_table)){
@@ -438,7 +487,7 @@ for(i in 1:nrow(demigcoc_model_caseprosecuting_table)){
 
 # DEMIG COC 5 Year Lagged OLS
 
-demigcoc_laggedmodel_caseprosecuting_table = as.data.frame(summary(demigcoc_laggedmodel_caseprosecuting)[,c(1,2,4)])
+demigcoc_laggedmodel_caseprosecuting_table = as.data.frame(demigcoc_laggedmodel_caseprosecuting[,1:4])
 demigcoc_laggedmodel_caseprosecuting_table$stars = "." 
 
 for(i in 1:nrow(demigcoc_laggedmodel_caseprosecuting_table)){
@@ -460,7 +509,9 @@ for(i in 1:nrow(demigcoc_laggedmodel_caseprosecuting_table)){
 coeffplot = 
 rbind(
  replication_model_caseprosecuting_table[2,c(1,2)],
+ replication_model_caseprosecuting_dpi_table[2,c(1,2)],
  replicationcase_relogit_table[2,c(1,2)],
+ replicationcase_relogit_dpi_table[2,c(1,2)],
  leblang_model_caseprosecuting_table[2,c(1,2)],
  leblanglag_model_caseprosecuting_table[2,c(1,2)],
  refugee_ymodel_caseprosecuting_table[2,c(1,2)],
@@ -474,11 +525,415 @@ rbind(
  demigcoc_laggedmodel_caseprosecuting_table[2,c(1,2)])
 
 colnames(coeffplot) = c("estimate","std.error")
-coeffplot$term =  c("World Bank OLS", "World Bank Relogit", "Leblang OLS", "Leblang 5 Year Lag OLS", "Refugee No Imputation OLS", "Refugee Imputation 1 OLS", "Refugee Imputation 2 OLS", "DEMIG COR OLS", "DEMIG COR 5 Year OLS", "DEMIG COB OLS", "DEMIG COB 5 Year OLS", "DEMIG COC OLS", "DEMIG COC 5 Year OLS")
+coeffplot$term =  c("World Bank OLS","World Bank OLS + DPI", "World Bank Relogit","World Bank Relogit + DPI", "Leblang OLS", "Leblang 5 Year Lag OLS", "Refugee No Imputation OLS", "Refugee Imputation 1 OLS", "Refugee Imputation 2 OLS", "DEMIG COR OLS", "DEMIG COR 5 Year OLS", "DEMIG COB OLS", "DEMIG COB 5 Year OLS", "DEMIG COC OLS", "DEMIG COC 5 Year OLS")
 
 m1_df = tibble(coeffplot)
-m1_df
 dwplot(m1_df) +
   labs(title = "Immigration Variable Coefficient across Case Count Regressions")
 ```
 
+## Case Model Coefficients
+
+### Replication OLS (Cases)
+
+```{r}
+kable(replication_model_caseprosecuting_table, caption = "Replication OLS (Cases)")
+```
+
+### Replication OLS DPI (Cases)
+
+```{r}
+kable(replication_model_caseprosecuting_dpi_table, caption = "Replication OLS DPI (Cases)")
+```
+
+### Replication Logit (Cases)
+
+```{r}
+kable(replicationcase_relogit_table, caption = "Replication Logit (Cases)")
+```
+
+### Replication Logit DPI (Cases)
+
+```{r}
+kable(replicationcase_relogit_dpi_table, caption = "Replication Logit DPI (Cases)")
+```
+
+### Leblang OLS (Cases)
+
+```{r}
+kable(leblang_model_caseprosecuting_table, caption = "Leblang OLS (Cases)")
+```
+
+### Leblang 5 Year Lag OLS (Cases)
+
+```{r}
+kable(leblanglag_model_caseprosecuting_table, caption = "Leblang 5 Year Lag OLS (Cases)")
+```
+
+### Refugee No Imputation OLS (Cases)
+
+```{r}
+kable(refugee_ymodel_caseprosecuting_table, caption = "Refugee No Imputation OLS (Cases)")
+```
+
+### Refugee Imputation 1 OLS (Cases)
+
+```{r}
+kable(refugee_ylassomodel_caseprosecuting_table, caption = "Refugee Imputation 1 OLS (Cases)")
+```
+
+### Refugee Imputation 2 OLS (Cases)
+
+```{r}
+kable(refugee_ylinpolmodel_caseprosecuting_table, caption = "Refugee Imputation 2 OLS (Cases)")
+```
+
+### DEMIG COR OLS (Cases)
+
+```{r}
+kable(demigcor_model_caseprosecuting_table, caption = "DEMIG COR OLS (Cases)")
+```
+
+### DEMIG COR 5 Year Lagged OLS (Cases)
+
+```{r}
+kable(demigcor_laggedmodel_caseprosecuting_table, caption = "DEMIG COR 5 Year Lagged OLS (Cases)")
+```
+
+### DEMIG COB OLS (Cases)
+
+```{r}
+kable(demigcob_model_caseprosecuting_table, caption = "DEMIG COB OLS (Cases)")
+```
+
+### DEMIG COB 5 Year Lagged OLS (Cases)
+
+```{r}
+kable(demigcob_laggedmodel_caseprosecuting_table, caption = "DEMIG COB 5 Year Lagged OLS (Cases)")
+```
+
+### DEMIG COC OLS (Cases)
+
+```{r}
+kable(demigcoc_model_caseprosecuting_table, caption = "DEMIG COC OLS (Cases)")
+```
+
+### DEMIG COC 5 Year Lagged OLS (Cases)
+
+```{r}
+kable(demigcoc_laggedmodel_caseprosecuting_table, caption = "DEMIG COC 5 Year Lagged OLS (Cases)")
+```
+
+## Individual Trials Model Coefficient Tables
+
+```{r, include=FALSE}
+# Replication OLS
+replication_model_trialprosecuting_table = as.data.frame(replication_model_trialprosecuting[,1:4])
+replication_model_trialprosecuting_table$stars = "." 
+
+for(i in 1:nrow(replication_model_trialprosecuting_table)){
+  if(replication_model_trialprosecuting_table$`Pr(>|t|)`[i] < 0.01){
+    replication_model_trialprosecuting_table$stars[i] = "***"
+  } else if (replication_model_trialprosecuting_table$`Pr(>|t|)`[i] < 0.05){
+    replication_model_trialprosecuting_table$stars[i] = "**"
+  } else if (replication_model_trialprosecuting_table$`Pr(>|t|)`[i] < 0.1){
+    replication_model_trialprosecuting_table$stars[i] = "*"
+  } else {
+    replication_model_trialprosecuting_table$stars[i] = " "
+  }
+}
+
+# Replication OLS DPI
+replication_model_trialprosecuting_table_dpi = as.data.frame(replication_model_trialprosecuting_dpi[,1:4])
+replication_model_trialprosecuting_table_dpi$stars = "." 
+
+for(i in 1:nrow(replication_model_trialprosecuting_table_dpi)){
+  if(replication_model_trialprosecuting_table_dpi$`Pr(>|t|)`[i] < 0.01){
+    replication_model_trialprosecuting_table_dpi$stars[i] = "***"
+  } else if (replication_model_trialprosecuting_table_dpi$`Pr(>|t|)`[i] < 0.05){
+    replication_model_trialprosecuting_table_dpi$stars[i] = "**"
+  } else if (replication_model_trialprosecuting_table_dpi$`Pr(>|t|)`[i] < 0.1){
+    replication_model_trialprosecuting_table_dpi$stars[i] = "*"
+  } else {
+    replication_model_trialprosecuting_table_dpi$stars[i] = " "
+  }
+}
+
+# Replication Logit
+
+replicationtrial_relogit_table = as.data.frame(replicationtrial_relogit[,1:4])
+replicationtrial_relogit_table$stars = "." 
+
+for(i in 1:nrow(replicationtrial_relogit_table)){
+  if(replicationtrial_relogit_table$`Pr(>|z|)`[i] < 0.01){
+    replicationtrial_relogit_table$stars[i] = "***"
+  } else if (replicationtrial_relogit_table$`Pr(>|z|)`[i] < 0.05){
+    replicationtrial_relogit_table$stars[i] = "**"
+  } else if (replicationtrial_relogit_table$`Pr(>|z|)`[i] < 0.1){
+    replicationtrial_relogit_table$stars[i] = "*"
+  } else {
+    replicationtrial_relogit_table$stars[i] = " "
+  }
+}
+
+# Replication Logit DPI
+
+replicationtrial_relogit_table_dpi = as.data.frame(replicationtrial_relogit_dpi[,1:4])
+replicationtrial_relogit_table_dpi$stars = "." 
+
+for(i in 1:nrow(replicationtrial_relogit_table_dpi)){
+  if(replicationtrial_relogit_table_dpi$`Pr(>|z|)`[i] < 0.01){
+    replicationtrial_relogit_table_dpi$stars[i] = "***"
+  } else if (replicationtrial_relogit_table_dpi$`Pr(>|z|)`[i] < 0.05){
+    replicationtrial_relogit_table_dpi$stars[i] = "**"
+  } else if (replicationtrial_relogit_table_dpi$`Pr(>|z|)`[i] < 0.1){
+    replicationtrial_relogit_table_dpi$stars[i] = "*"
+  } else {
+    replicationtrial_relogit_table_dpi$stars[i] = " "
+  }
+}
+
+# Leblang OLS
+
+leblang_model_trialprosecuting_table = as.data.frame(leblang_model_trialprosecuting[,1:4])
+leblang_model_trialprosecuting_table$stars = "." 
+
+for(i in 1:nrow(leblang_model_trialprosecuting_table)){
+  if(leblang_model_trialprosecuting_table$`Pr(>|t|)`[i] < 0.01){
+    leblang_model_trialprosecuting_table$stars[i] = "***"
+  } else if (leblang_model_trialprosecuting_table$`Pr(>|t|)`[i] < 0.05){
+    leblang_model_trialprosecuting_table$stars[i] = "**"
+  } else if (leblang_model_trialprosecuting_table$`Pr(>|t|)`[i] < 0.1){
+    leblang_model_trialprosecuting_table$stars[i] = "*"
+  } else {
+    leblang_model_trialprosecuting_table$stars[i] = " "
+  }
+}
+
+# Leblang 5 Year Lag OLS
+
+leblanglag_model_trialprosecuting_table = as.data.frame(leblanglag_model_trialprosecuting[,1:4])
+leblanglag_model_trialprosecuting_table$stars = "." 
+
+for(i in 1:nrow(leblanglag_model_trialprosecuting_table)){
+  if(leblanglag_model_trialprosecuting_table$`Pr(>|t|)`[i] < 0.01){
+    leblanglag_model_trialprosecuting_table$stars[i] = "***"
+  } else if (leblanglag_model_trialprosecuting_table$`Pr(>|t|)`[i] < 0.05){
+    leblanglag_model_trialprosecuting_table$stars[i] = "**"
+  } else if (leblanglag_model_trialprosecuting_table$`Pr(>|t|)`[i] < 0.1){
+    leblanglag_model_trialprosecuting_table$stars[i] = "*"
+  } else {
+    leblanglag_model_trialprosecuting_table$stars[i] = " "
+  }
+}
+
+# Refugee No Imputation OLS
+
+refugee_ymodel_trialprosecuting_table = as.data.frame(refugee_ymodel_trialprosecuting[,1:4])
+refugee_ymodel_trialprosecuting_table$stars = "." 
+
+for(i in 1:nrow(refugee_ymodel_trialprosecuting_table)){
+  if(refugee_ymodel_trialprosecuting_table$`Pr(>|t|)`[i] < 0.01){
+    refugee_ymodel_trialprosecuting_table$stars[i] = "***"
+  } else if (refugee_ymodel_trialprosecuting_table$`Pr(>|t|)`[i] < 0.05){
+    refugee_ymodel_trialprosecuting_table$stars[i] = "**"
+  } else if (refugee_ymodel_trialprosecuting_table$`Pr(>|t|)`[i] < 0.1){
+    refugee_ymodel_trialprosecuting_table$stars[i] = "*"
+  } else {
+    refugee_ymodel_trialprosecuting_table$stars[i] = " "
+  }
+}
+
+# Refugee Imputation 1 OLS
+
+refugee_ylassomodel_trialprosecuting_table = as.data.frame(refugee_ylassomodel_trialprosecuting[,1:4])
+refugee_ylassomodel_trialprosecuting_table$stars = "." 
+
+for(i in 1:nrow(refugee_ylassomodel_trialprosecuting_table)){
+  if(refugee_ylassomodel_trialprosecuting_table$`Pr(>|t|)`[i] < 0.01){
+    refugee_ylassomodel_trialprosecuting_table$stars[i] = "***"
+  } else if (refugee_ylassomodel_trialprosecuting_table$`Pr(>|t|)`[i] < 0.05){
+    refugee_ylassomodel_trialprosecuting_table$stars[i] = "**"
+  } else if (refugee_ylassomodel_trialprosecuting_table$`Pr(>|t|)`[i] < 0.1){
+    refugee_ylassomodel_trialprosecuting_table$stars[i] = "*"
+  } else {
+    refugee_ylassomodel_trialprosecuting_table$stars[i] = " "
+  }
+}
+
+# Refugee Imputation 2 OLS
+
+refugee_ylinpolmodel_trialprosecuting_table = as.data.frame(refugee_ylinpolmodel_trialprosecuting[,1:4])
+refugee_ylinpolmodel_trialprosecuting_table$stars = "." 
+
+for(i in 1:nrow(refugee_ylinpolmodel_trialprosecuting_table)){
+  if(refugee_ylinpolmodel_trialprosecuting_table$`Pr(>|t|)`[i] < 0.01){
+    refugee_ylinpolmodel_trialprosecuting_table$stars[i] = "***"
+  } else if (refugee_ylinpolmodel_trialprosecuting_table$`Pr(>|t|)`[i] < 0.05){
+    refugee_ylinpolmodel_trialprosecuting_table$stars[i] = "**"
+  } else if (refugee_ylinpolmodel_trialprosecuting_table$`Pr(>|t|)`[i] < 0.1){
+    refugee_ylinpolmodel_trialprosecuting_table$stars[i] = "*"
+  } else {
+    refugee_ylinpolmodel_trialprosecuting_table$stars[i] = " "
+  }
+}
+```
+
+## Trial Dwplot
+
+```{r}
+trialcoeffplot = 
+rbind(
+ replication_model_trialprosecuting_table[2,c(1,2)],
+ replication_model_trialprosecuting_table_dpi[2,c(1,2)],
+ replicationtrial_relogit_table[2,c(1,2)],
+ replicationtrial_relogit_table_dpi[2,c(1,2)],
+ leblang_model_trialprosecuting_table[2,c(1,2)],
+ leblanglag_model_trialprosecuting_table[2,c(1,2)],
+ refugee_ymodel_trialprosecuting_table[2,c(1,2)],
+ refugee_ylassomodel_trialprosecuting_table[2,c(1,2)],
+ refugee_ylinpolmodel_trialprosecuting_table[2,c(1,2)])
+
+colnames(trialcoeffplot) = c("estimate","std.error")
+trialcoeffplot$term =  c("World Bank OLS","World Bank OLS + DPI", "World Bank Relogit","World Bank Relogit + DPI", "Leblang OLS", "Leblang 5 Year Lag OLS", "Refugee No Imputation OLS", "Refugee Imputation 1 OLS", "Refugee Imputation 2 OLS")
+
+m2_df = tibble(trialcoeffplot)
+dwplot(m2_df) +
+  labs(title = "Immigration Variable Coefficient across Trial Count Regressions")
+```
+
+## Trial Model Coefficients
+
+### Replication OLS (Trial)
+
+```{r}
+kable(replication_model_trialprosecuting_table, caption = "Replication (Trial)")
+```
+
+### Replication OLS DPI (Trial)
+
+```{r}
+kable(replication_model_trialprosecuting_table_dpi, caption = "Replication OLS DPI (Trial)")
+```
+
+### Replication Logit (Trial)
+
+```{r}
+kable(replicationtrial_relogit_table, caption = "Replication Logit (Trial)")
+```
+
+### Replication Logit DPI (Trial)
+
+```{r}
+kable(replicationtrial_relogit_table_dpi, caption = "Replication Logit DPI (Trial)")
+```
+
+### Leblang OLS (Trial)
+
+```{r}
+kable(leblang_model_trialprosecuting_table, caption = "Leblang OLS (Trial)")
+```
+
+### Leblang 5 Year Lag OLS (Trial)
+
+```{r}
+kable(leblanglag_model_trialprosecuting_table, caption = "Leblang 5 Year Lag OLS (Trial)")
+```
+
+### Refugee No Imputation OLS (Trial)
+
+```{r}
+kable(refugee_ymodel_trialprosecuting_table, caption = "Refugee No Imputation OLS (Trial)")
+```
+
+### Refugee Imputation 1 OLS (Trial)
+
+```{r}
+kable(refugee_ylassomodel_trialprosecuting_table, caption = "Refugee Imputation 1 OLS (Trial)")
+```
+
+### Refugee Imputation 2 OLS (Trial)
+
+```{r}
+kable(refugee_ylinpolmodel_trialprosecuting_table, caption = "Refugee Imputation 2 OLS (Trial)")
+```
+
+# Margins (Cases)
+```{r, eval=F}
+# Replication OLS (Cases)
+replication_model_caseprosecuting_ols_margins = margins(replication_model_caseprosecuting_ols, data = merged_data, at = list(lwbstocksout_full  = fivenum(merged_data$lwbstocksout_full)[c(2,4)]))
+
+kable(replication_model_caseprosecuting_ols_margins, caption = "Replication OLS (Cases)")
+
+# Replication OLS DPI (Cases)
+replication_model_caseprosecuting_ols_dpi_margins = margins(replication_model_caseprosecuting_ols_dpi, data = merged_data_dpi, at = list(lwbstocksout_full  = fivenum(merged_data_dpi$lwbstocksout_full)[c(2,4)]))
+
+kable(replication_model_caseprosecuting_ols_dpi_margins, caption = "Replication OLS DPI (Cases)")
+
+# Leblang Flow OLS (Cases)
+leblang_model_caseprosecuting_ols_margins = margins(leblang_model_caseprosecuting_ols, data = merged_data, at = list(newflow  = fivenum(merged_data$newflow)[c(2,4)]))
+
+kable(leblang_model_caseprosecuting_ols_margins, caption = "Leblang Flow OLS (Cases)")
+
+# Leblang 5 Year Lag OLS (Cases)
+leblanglag_model_caseprosecuting_ols_margins = margins(leblanglag_model_caseprosecuting_ols, data = merged_data, at = list(leblang5y  = fivenum(merged_data$leblang5y)[c(2,4)]))
+
+kable(leblanglag_model_caseprosecuting_ols_margins, caption = "Leblang 5 Year Lag OLS (Cases)")
+
+# Refugee Flows No Imputations OLS (Cases)
+refugee_ymodel_caseprosecuting_ols_margins = margins(refugee_ymodel_caseprosecuting_ols, data = merged_data, at = list(y  = fivenum(merged_data$y)[c(2,4)]))
+
+kable(refugee_ymodel_caseprosecuting_ols_margins, caption = "Refugee Flows No Imputations OLS (Cases)")
+
+# Refugee Flows Imputation 1 OLS (Cases)
+refugee_ylassomodel_caseprosecuting_ols_margins = margins(refugee_ylassomodel_caseprosecuting_ols, data = merged_data, at = list(ylasso  = fivenum(merged_data$ylasso)[c(2,4)]))
+
+kable(refugee_ylassomodel_caseprosecuting_ols_margins, caption = "Refugee Flows Imputation 1 OLS (Cases)")
+
+# Refugee Flows Imputation 2 OLS (Cases)
+refugee_ylinpolmodel_caseprosecuting_ols_margins = margins(refugee_ylinpolmodel_caseprosecuting_ols, data = merged_data, at = list(ylinpol  = fivenum(merged_data$ylinpol)[c(2,4)]))
+
+kable(refugee_ylinpolmodel_caseprosecuting_ols_margins, caption = "Refugee Flows Imputation 2 OLS (Cases)")
+
+# DEMIG COB OLS (Cases)
+demigcob_model_caseprosecuting_ols_margins = margins(demigcob_model_caseprosecuting_ols, data = merged_data, at = list(COB.Flow  = fivenum(merged_data$COB.Flow)[c(2,4)]))
+
+kable(demigcob_model_caseprosecuting_ols_margins, caption = "DEMIG COB OLS (Cases)")
+
+# DEMIG COB 5 Year Lagged OLS (Cases)
+demigcob_laggedmodel_caseprosecuting_ols_margins = margins(demigcob_laggedmodel_caseprosecuting_ols, data = merged_data, at = list(cob5y  = fivenum(merged_data$cob5y)[c(2,4)]))
+
+kable(demigcob_laggedmodel_caseprosecuting_ols_margins, caption = "DEMIG COB 5 Year Lagged OLS (Cases)")
+
+# DEMIG COC OLS (Cases)
+demigcoc_model_caseprosecuting_ols_margins = margins(demigcoc_model_caseprosecuting_ols, data = merged_data, at = list(COC.Flow  = fivenum(merged_data$COC.Flow)[c(2,4)]))
+
+kable(demigcoc_model_caseprosecuting_ols_margins, caption = "DEMIG COC OLS (Cases)")
+
+# DEMIG COC 5 Year Lagged OLS (Cases)
+demigcoc_laggedmodel_caseprosecuting_ols_margins = margins(demigcoc_laggedmodel_caseprosecuting_ols, data = merged_data, at = list(coc5y  = fivenum(merged_data$coc5y)[c(2,4)]))
+
+kable(demigcoc_laggedmodel_caseprosecuting_ols_margins, caption = "DEMIG COC 5 Year Lagged OLS (Cases)")
+
+# DEMIG COR OLS (Cases)
+demigcor_model_caseprosecuting_ols_margins = margins(demigcor_model_caseprosecuting_ols, data = merged_data, at = list(COR.Flow  = fivenum(merged_data$COR.Flow)[c(2,4)]))
+
+kable(demigcor_model_caseprosecuting_ols_margins, caption = "DEMIG COR OLS (Cases)")
+
+# DEMIG COR 5 Year Lagged OLS (Cases)
+demigcor_laggedmodel_caseprosecuting_ols_margins = margins(demigcor_laggedmodel_caseprosecuting_ols, data = merged_data, at = list(cor5y  = fivenum(merged_data$cor5y)[c(2,4)]))
+
+kable(demigcor_laggedmodel_caseprosecuting_ols_margins, caption = "DEMIG COR 5 Year Lagged OLS (Cases)")
+```
+
+# Stargazer Plot (Cases)
+
+```{r latexregtable, results = "asis"}
+stargazer(replication_model_caseprosecuting_ols, replicationcase_relogit_model, replication_model_caseprosecuting_ols_dpi, replicationcase_relogit_model_dpi, title="Replication Results (Cases)", single.row = T,dep.var.labels = c("Cases (count)", "Cases (first)", "Cases (count)", "Cases (first)"), covariate.labels=c("Migrants stock (log)","Polity (RS)", "Polity (SS)","Violence (SS)","Population (log, RS)","Population (log, SS)", "GDPpc (log, RS)", "GDPpc (log, SS)", "Imports", "Exports", "Alliance", "Distance (log)", "Colony", "Shared Language",  "Year", "Rome (signed)", "Rome (ratified)"), order=c("lwbstocksout_full", "polity_s_1", "factor(romesigned)", "factor(romeratify)", "imports1000", "exports1000", "factor(alliance)"),column.labels = c("World Bank OLS", "World Bank Logit","World Bank OLS + DPI", "World Bank Logit + DPI"),dep.var.labels.include = FALSE)
+```
+
+# Stargazer Plot (Trials)
+
+```{r latexregtable2, results = "asis"}
+stargazer(replication_model_trialprosecuting, replicationtrial_relogit, replication_model_trialprosecuting_dpi, replicationtrial_relogit_dpi, title="Replication Results (Trials)", single.row = T,dep.var.labels = c("Trials (count)", "Trials (first)", "Trials (count)", "Trials (first)"), covariate.labels=c("Migrants stock (log)","Polity (RS)", "Polity (SS)","Violence (SS)","Population (log, RS)","Population (log, SS)", "GDPpc (log, RS)", "GDPpc (log, SS)", "Imports", "Exports", "Alliance", "Distance (log)", "Colony", "Shared Language",  "Year", "Rome (signed)", "Rome (ratified)"), order=c("lwbstocksout_full", "polity_s_1", "factor(romesigned)", "factor(romeratify)", "imports1000", "exports1000", "factor(alliance)"),column.labels = c("World Bank OLS", "World Bank Logit","World Bank OLS + DPI", "World Bank Logit + DPI"),dep.var.labels.include = FALSE)
+```

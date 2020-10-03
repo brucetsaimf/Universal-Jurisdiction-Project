@@ -30,13 +30,19 @@ suppressMessages(library(stargazer))
 
 Note: Zelig is unavailable through CRAN. Run devtools::install_github('IQSS/Zelig') to install package.
 
-# UJ Dataset
+# UJ Dataset Sort+Clean
 
 ```{r}
 uj_raw = read_xlsx("Langer-Eason Database Clean.xlsx", sheet = 1)
 uj_raw$`prosecuting state`[32] = "Germany"
 
-uj_data = uj_raw[,c(4:5,14,19,26)]
+uj_data = uj_raw[,c(3,4:5,10,14,17,19,26)]
+
+uj_data = uj_data %>% rowwise() %>% mutate(nazi = ifelse(`def nationality state` == "Nazi", 1, 0))
+uj_data = uj_data %>% rowwise() %>% mutate(fy = ifelse(`def nationality state` == "Former Yugoslavia" | 
+                                                         `def nationality state` == "Former_Yugoslavia", 1, 0))
+uj_data = uj_data %>% rowwise() %>% mutate(isis = ifelse(`def nationality state` == "ISIS/Daesh", 1, 0))
+uj_data = uj_data %>% rowwise() %>% mutate(isjd = ifelse(grepl("Doe", defendant_name) == T, 1, 0))
 
 # Recode States
 uj_data[uj_data$`def nationality state` == "Nazi","def nationality state"] = "Germany"
@@ -80,18 +86,16 @@ states_data_clean7$TrialYear = as.numeric(substring(states_data_clean7$Initial_T
 states_data_clean7$Initial_Trial_Start_Date = as.character(states_data_clean7$Initial_Trial_Start_Date)
 
 uj_data = bind_rows(states_data_clean1,states_data_clean2,states_data_clean3,states_data_clean4,states_data_clean5,states_data_clean6,states_data_clean7)
-```
 
-# DEMIG Dataset
+uj_data$formal.proceedings.initiated.date..formally.charged.or.indicted. = as.numeric(substring(excel_numeric_to_date(as.numeric(as.character(uj_data$formal.proceedings.initiated.date..formally.charged.or.indicted.)), date_system = "modern"),1,4))
 
-```{r}
-demig_data = read_excel("demig-c2c-migration-flow-database-version-1-2_limited-online-edition.xlsx", sheet = "Inflow")
+colnames(uj_data)[6] = "InvestYear"
 ```
 
 # Replication Dataset
 
 ```{r}
-replication_data = read_dta("Replication_Migration_Dyadic.dta")
+replication_data = read.csv("dyadic_data.csv")
 ```
 
 # Leblang Dataset
@@ -177,11 +181,11 @@ def_data_trial = inner_join(def_data_trial,ccode,by = c("def.nationality.state" 
 colnames(pro_data_trial)[3] = "prosecuting.trialcount"
 colnames(def_data_trial)[3] = "defending.trialcount"
 
-merged_data = left_join(replication_data,pro_data,by = c("ccode2" = "CCode", "year" = "Case.Year"))
-merged_data = left_join(merged_data,def_data,by = c("ccode1" = "CCode", "year" = "Case.Year"))
+merged_data = left_join(replication_data,pro_data[,c(2,3,4)],by = c("ccode2" = "CCode", "year" = "Case.Year"))
+merged_data = left_join(merged_data,def_data[,c(2,3,4)],by = c("ccode1" = "CCode", "year" = "Case.Year"))
 
-merged_data = left_join(merged_data,pro_data_trial,by = c("ccode2" = "CCode", "year" = "TrialYear"))
-merged_data = left_join(merged_data,def_data_trial,by = c("ccode1" = "CCode", "year" = "TrialYear"))
+merged_data = left_join(merged_data,pro_data_trial[,c(2,3,4)],by = c("ccode2" = "CCode", "year" = "TrialYear"))
+merged_data = left_join(merged_data,def_data_trial[,c(2,3,4)],by = c("ccode1" = "CCode", "year" = "TrialYear"))
 ```
 
 # Merge Leblang Data with CCode
@@ -191,34 +195,17 @@ ccode = read_excel("COW-ISO-IMF country code lists.xlsx")
 ccode = distinct(ccode, CCode, .keep_all = T)
 ccode = ccode[,c(2,4)]
 
-leblang_data = left_join(leblang_data,ccode,by = c("iso_o" = "ISO"))
+leblang_data = inner_join(leblang_data,ccode,by = c("iso_o" = "ISO"))
 colnames(leblang_data)[7] = "ccode1"
 
-leblang_data = left_join(leblang_data,ccode,by = c("iso_d" = "ISO"))
+leblang_data = inner_join(leblang_data,ccode,by = c("iso_d" = "ISO"))
 colnames(leblang_data)[8] = "ccode2"
 ```
 
 # Merge Leblang Data (Leblang + Replication + UJ)
 
 ```{r}
-merged_data = inner_join(merged_data,leblang_data,by = c("ccode1" = "ccode1", "ccode2" = "ccode2", "year" = "year"))
-```
-
-# Split Demig Data
-
-```{r}
-demig_coc = demig_data[demig_data$Criterion == "COC",]
-demig_cob = demig_data[demig_data$Criterion == "COB",]
-demig_cor = demig_data[demig_data$Criterion == "COR",]
-
-# Filter only Totals
-demig_coc = demig_coc[(demig_coc$Gender == "Total" & demig_coc$`Coverage -Citizens/Foreigners/Both-` == "Both" & demig_coc$COUNTRIES == "Total"),]
-demig_cob = demig_cob[(demig_cob$Gender == "Total" & demig_cob$`Coverage -Citizens/Foreigners/Both-` == "Both" & demig_cob$COUNTRIES == "Total"),]
-demig_cor = demig_cor[(demig_cor$Gender == "Total" & demig_cor$`Coverage -Citizens/Foreigners/Both-` == "Both" & demig_cor$COUNTRIES == "Total"),]
-
-demig_coc = demig_coc[,c(1,16:18)]
-demig_cob = demig_cob[,c(1,16:18)]
-demig_cor = demig_cor[,c(1,16:18)]
+merged_data = left_join(merged_data,leblang_data,by = c("ccode1" = "ccode1", "ccode2" = "ccode2", "year" = "year"))
 ```
 
 # Rome Statute Data
@@ -272,7 +259,7 @@ dpi_data = inner_join(dpi_data,ccode,by = c("ifs" = "ISO"))
 merged_data = merged_data %>%  left_join(dpi_data[,c(3,4,5)],by = c("ccode2" = "CCode", "year" = "year"))
 ```
 
-# Add Logistic Variable for Cases and Trials
+# Add Logistic Variable for Cases and Trials for ALL CASES to receiving/sending by YEAR
 
 ```{r}
 merged_data = merged_data %>% rowwise() %>% mutate(anydefendingcase = ifelse(`defending.casecount` > 0, 1, 0))
@@ -281,129 +268,157 @@ merged_data = merged_data %>% rowwise() %>% mutate(anydefendingtrial = ifelse(`d
 merged_data = merged_data %>% rowwise() %>% mutate(anyprosecutingtrial = ifelse(`prosecuting.trialcount` > 0, 1, 0))
 ```
 
-# Demig Merge Data
-```{r}
-# Merge CCode
-
-ccode = read_excel("COW-ISO-IMF country code lists.xlsx")
-ccode = distinct(ccode, CCode, .keep_all = T)
-ccode = ccode[,c(2,3)]
-
-demig_cob_data = inner_join(demig_cob,ccode,by = c("Reporting country" = "StateNme"))
-demig_coc_data = inner_join(demig_coc,ccode,by = c("Reporting country" = "StateNme"))  
-demig_cor_data = inner_join(demig_cor,ccode,by = c("Reporting country" = "StateNme"))  
-
-# Merge Demig with Full Dataset
-
-merged_data = left_join(merged_data,demig_cor_data[,c(2,4,5)],by = c("year" = "Year", "ccode2" = "CCode"))  
-colnames(merged_data)[colnames(merged_data) == "Value"] = "COR.Flow"
-
-merged_data = left_join(merged_data,demig_cob_data[,c(2,4,5)],by = c("year" = "Year", "ccode2" = "CCode"))  
-colnames(merged_data)[colnames(merged_data) == "Value"] = "COB.Flow"
-
-merged_data = left_join(merged_data,demig_coc_data[,c(2,4,5)],by = c("year" = "Year", "ccode2" = "CCode"))  
-colnames(merged_data)[colnames(merged_data) == "Value"] = "COC.Flow"
-```
-
-# Correlation Matrix Flatten Function
-
-```{r, echo=FALSE}
-flattenCorrMatrix <- function(cormat, pmat) {
-  ut <- upper.tri(cormat)
-  data.frame(
-    row = rownames(cormat)[row(cormat)[ut]],
-    column = rownames(cormat)[col(cormat)[ut]],
-    cor  =(cormat)[ut],
-    p = pmat[ut]
-    )
-}
-```
-
-```{r}
-res1<-rcorr(as.matrix(merged_data[,c("lwbstocksout_full", "polity_s_1", "polity_s_2", "violence_domestic_2",
-                         "lpop_1", "lpop_2", "lgdpcap_1", "lgdpcap_2", "imports1000", "exports1000", "alliance", "ldist2", 
-                         "d_colony2", "langshare", "year", "romesigned", "romeratify")]))
-fulldata_corr = flattenCorrMatrix(res1$r, res1$P)
-```
-
-
-# RE Processing
-
-```{r}
-merged_data$anyprosecutingcase[which(is.na(merged_data$anyprosecutingcase))] = 0
-merged_data$anyprosecutingcase[which(is.na(merged_data$anyprosecutingtrial))] = 0
-merged_data$alliance = as.factor(merged_data$alliance)
-merged_data$d_colony2 = as.factor(merged_data$d_colony2)
-merged_data$langshare = as.factor(merged_data$langshare)
-merged_data$romesigned = as.factor(merged_data$romesigned)
-merged_data$romeratify = as.factor(merged_data$romeratify)
-
-merged_data = merged_data[complete.cases(merged_data[,c("lwbstocksout_full", "polity_s_1", "polity_s_2", "violence_domestic_2",
-                         "lpop_1", "lpop_2", "lgdpcap_1", "lgdpcap_2", "imports1000", "exports1000", "alliance", "ldist2", 
-                         "d_colony2", "langshare", "year", "romesigned", "romeratify")]),]
-```
-
-# Add Moving 5 Year Leblang Sum
-
-```{r}
-merged_data$leblang5y = 0
-
-for(i in 1:nrow(merged_data)){
- 
-  merged_data$leblang5y[i] = sum(merged_data[(merged_data$year >= merged_data$year[i] - 5 &
-                                                 merged_data$year >= merged_data$year[i] &
-                                                  merged_data$ccode1 == merged_data$ccode1[i] &
-                                                  merged_data$ccode2 == merged_data$ccode2[i]),"newflow"])
-}
-```
-
-
-# Add Moving 5 Year Demig Sum
-
-```{r}
-#COR
-merged_data$cor5y = 0
-
-for(i in 1:nrow(merged_data)){
- 
-  merged_data$cor5y[i] = sum(merged_data[(merged_data$year >= merged_data$year[i] - 5 &
-                                                 merged_data$year >= merged_data$year[i] &
-                                                  merged_data$ccode1 == merged_data$ccode1[i] &
-                                                  merged_data$ccode2 == merged_data$ccode2[i]),"COR.Flow"])
-}
-
-#COB
-merged_data$cob5y = 0
-
-for(i in 1:nrow(merged_data)){
- 
-  merged_data$cob5y[i] = sum(merged_data[(merged_data$year >= merged_data$year[i] - 5 &
-                                                 merged_data$year >= merged_data$year[i] &
-                                                  merged_data$ccode1 == merged_data$ccode1[i] &
-                                                  merged_data$ccode2 == merged_data$ccode2[i]),"COB.Flow"])
-}
-
-#COC
-merged_data$coc5y = 0
-
-for(i in 1:nrow(merged_data)){
- 
-  merged_data$coc5y[i] = sum(merged_data[(merged_data$year >= merged_data$year[i] - 5 &
-                                                 merged_data$year >= merged_data$year[i] &
-                                                  merged_data$ccode1 == merged_data$ccode1[i] &
-                                                  merged_data$ccode2 == merged_data$ccode2[i]),"COC.Flow"])
-}
-
-
-
-```
-
 # Split Data by First Case/Trial for Relogit
 
 ```{r}
 prosecuting_data = pro_table[,c(1,2,6,10)]
 merged_data = merged_data %>%  left_join(prosecuting_data[,c(2:4)],by = c("ccode2" = "CCode"))
-  
-write.csv(merged_data,"Full Dataframe.csv")  
+```
+
+# Case/Trial/Investigations that Year (_nojd indicates Non John Doe tallies)
+
+```{r}
+ccode = read_excel("COW-ISO-IMF country code lists.xlsx")
+ccode = distinct(ccode, CCode, .keep_all = T)
+ccode = ccode[,c(2,3)]
+
+uj_data = inner_join(uj_data,ccode,by = c("def.nationality.state" = "StateNme"))
+colnames(uj_data)[14] = "ccode1"
+uj_data = inner_join(uj_data,ccode,by = c("prosecuting.state" = "StateNme"))
+colnames(uj_data)[15] = "ccode2"
+
+case_dyad = uj_data[,c("Case.Year","ccode1","ccode2")]
+trial_dyad = uj_data[,c("TrialYear","ccode1","ccode2")]
+invest_dyad = uj_data[,c("InvestYear","ccode1","ccode2")]
+colnames(case_dyad)[1] = "year"
+colnames(trial_dyad)[1] = "year"
+colnames(invest_dyad)[1] = "year"
+
+case_dyad_nojd = uj_data[uj_data$isjd == 0,c("Case.Year","ccode1","ccode2")]
+trial_dyad_nojd = uj_data[uj_data$isjd == 0,c("TrialYear","ccode1","ccode2")]
+invest_dyad_nojd = uj_data[uj_data$isjd == 0,c("InvestYear","ccode1","ccode2")]
+colnames(case_dyad_nojd)[1] = "year"
+colnames(trial_dyad_nojd)[1] = "year"
+colnames(invest_dyad_nojd)[1] = "year"
+
+merged_data$index = 1:nrow(merged_data)
+merged_data$anynewcase = 0
+merged_data$anynewtrial = 0
+merged_data$anynewinvest = 0
+merged_data$anynewcase_nojd = 0
+merged_data$anynewtrial_nojd = 0
+merged_data$anynewinvest_nojd = 0
+
+suppressMessages(library(plyr))
+merged_data$anynewcase[match_df(merged_data,case_dyad)$index] = 1
+merged_data$anynewtrial[match_df(merged_data,trial_dyad)$index] = 1
+merged_data$anynewinvest[match_df(merged_data,invest_dyad)$index] = 1
+merged_data$anynewcase_nojd[match_df(merged_data,case_dyad_nojd)$index] = 1
+merged_data$anynewtrial_nojd[match_df(merged_data,trial_dyad_nojd)$index] = 1
+merged_data$anynewinvest_nojd[match_df(merged_data,invest_dyad_nojd)$index] = 1
+
+```
+
+# NEW CASE COUNTS PER DYAD PER YEAR
+```{r}
+newcasecount = uj_data %>% group_by(prosecuting.state, def.nationality.state, Case.Year) %>%
+  dplyr::summarise(count = n())
+
+colnames(newcasecount)[4] = "newcasecount"
+newcasecount = inner_join(newcasecount,ccode,by = c("def.nationality.state" = "StateNme"))
+colnames(newcasecount)[5] = "ccode1"
+newcasecount = inner_join(newcasecount,ccode,by = c("prosecuting.state" = "StateNme"))
+colnames(newcasecount)[6] = "ccode2"
+
+merged_data = left_join(merged_data,newcasecount[,c(3:6)], by = c("year" = "Case.Year", "ccode1" = "ccode1", "ccode2" = "ccode2"))
+```
+
+# NEW TRIAL COUNTS PER DYAD PER YEAR
+```{r}
+newtrialcount = uj_data %>% group_by(prosecuting.state, def.nationality.state, TrialYear) %>%
+  dplyr::summarise(count = n())
+newtrialcount = newtrialcount[!is.na(newtrialcount$TrialYear),]
+
+colnames(newtrialcount)[4] = "newtrialcount"
+newtrialcount = inner_join(newtrialcount,ccode,by = c("def.nationality.state" = "StateNme"))
+colnames(newtrialcount)[5] = "ccode1"
+newtrialcount = inner_join(newtrialcount,ccode,by = c("prosecuting.state" = "StateNme"))
+colnames(newtrialcount)[6] = "ccode2"
+
+merged_data = left_join(merged_data,newtrialcount[,c(3:6)], by = c("year" = "TrialYear", "ccode1" = "ccode1", "ccode2" = "ccode2"))
+```
+
+# NEW INVESTIGATION COUNTS PER DYAD PER YEAR
+```{r}
+newinvestcount = uj_data %>% group_by(prosecuting.state, def.nationality.state, InvestYear) %>%
+  dplyr::summarise(count = n())
+newinvestcount = newinvestcount[!is.na(newinvestcount$InvestYear),]
+
+colnames(newinvestcount)[4] = "newinvestcount"
+newinvestcount = inner_join(newinvestcount,ccode,by = c("def.nationality.state" = "StateNme"))
+colnames(newinvestcount)[5] = "ccode1"
+newinvestcount = inner_join(newinvestcount,ccode,by = c("prosecuting.state" = "StateNme"))
+colnames(newinvestcount)[6] = "ccode2"
+
+merged_data = left_join(merged_data,newinvestcount[,c(3:6)], by = c("year" = "InvestYear", "ccode1" = "ccode1", "ccode2" = "ccode2"))
+```
+
+# COUNT WITHOUT JOHN DOES
+## CASES
+```{r}
+newcasecount_nojd = uj_data[uj_data$isjd == 0,] %>% group_by(prosecuting.state, def.nationality.state, Case.Year) %>%
+  dplyr::summarise(count = n())
+
+colnames(newcasecount_nojd)[4] = "newcasecount_nojd"
+newcasecount_nojd = inner_join(newcasecount_nojd,ccode,by = c("def.nationality.state" = "StateNme"))
+colnames(newcasecount_nojd)[5] = "ccode1"
+newcasecount_nojd = inner_join(newcasecount_nojd,ccode,by = c("prosecuting.state" = "StateNme"))
+colnames(newcasecount_nojd)[6] = "ccode2"
+
+merged_data = left_join(merged_data,newcasecount_nojd[,c(3:6)], by = c("year" = "Case.Year", "ccode1" = "ccode1", "ccode2" = "ccode2"))
+```
+
+## TRIALS
+```{r}
+newtrialcount_nojd = uj_data[uj_data$isjd == 0,] %>% group_by(prosecuting.state, def.nationality.state, TrialYear) %>%
+  dplyr::summarise(count = n())
+newtrialcount_nojd = newtrialcount_nojd[!is.na(newtrialcount_nojd$TrialYear),]
+
+colnames(newtrialcount_nojd)[4] = "newtrialcount_nojd"
+newtrialcount_nojd = inner_join(newtrialcount_nojd,ccode,by = c("def.nationality.state" = "StateNme"))
+colnames(newtrialcount_nojd)[5] = "ccode1"
+newtrialcount_nojd = inner_join(newtrialcount_nojd,ccode,by = c("prosecuting.state" = "StateNme"))
+colnames(newtrialcount_nojd)[6] = "ccode2"
+
+merged_data = left_join(merged_data,newtrialcount_nojd[,c(3:6)], by = c("year" = "TrialYear", "ccode1" = "ccode1", "ccode2" = "ccode2"))
+```
+
+## INVESTIGATIONS
+
+```{r}
+newinvestcount_nojd = uj_data[uj_data$isjd == 0,] %>% group_by(prosecuting.state, def.nationality.state, InvestYear) %>%
+  dplyr::summarise(count = n())
+newinvestcount_nojd = newinvestcount_nojd[!is.na(newinvestcount_nojd$InvestYear),]
+
+colnames(newinvestcount_nojd)[4] = "newinvestcount_nojd"
+newinvestcount_nojd = inner_join(newinvestcount_nojd,ccode,by = c("def.nationality.state" = "StateNme"))
+colnames(newinvestcount_nojd)[5] = "ccode1"
+newinvestcount_nojd = inner_join(newinvestcount_nojd,ccode,by = c("prosecuting.state" = "StateNme"))
+colnames(newinvestcount_nojd)[6] = "ccode2"
+
+merged_data = left_join(merged_data,newinvestcount_nojd[,c(3:6)], by = c("year" = "InvestYear", "ccode1" = "ccode1", "ccode2" = "ccode2"))
+```
+
+# SWAP CCODE1 and CCODE2 COLUMN
+
+```{r}
+colnames(merged_data)[1:2] = c("ccode2","ccode1")
+colnames(merged_data)[4:5] = c("country2","country1")
+```
+
+# CREATE CSV
+
+```{r}
+write.csv(merged_data,"Full Dataframe.csv") 
 ```
 
